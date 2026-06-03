@@ -100,6 +100,50 @@ function getDetailedError(message: string | null): ParsedError {
   return { title, explanation, cause, cta };
 }
 
+function TypewriterText() {
+  const text = "Instantly rewrite wordy files into designer slides.";
+  const [displayedText, setDisplayedText] = useState("");
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (index < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + text[index]);
+        setIndex((prev) => prev + 1);
+      }, 45); // 45ms per character is highly legible and premium
+      return () => clearTimeout(timeout);
+    }
+  }, [index, text]);
+
+  const baseText = "Instantly rewrite wordy files into ";
+
+  if (displayedText.length <= baseText.length) {
+    return (
+      <span className="relative inline">
+        <span>{displayedText}</span>
+        {index < text.length && (
+          <span className="inline-block w-[3px] h-[0.85em] bg-indigo-400 ml-1 translate-y-[2px] animate-pulse" />
+        )}
+      </span>
+    );
+  }
+
+  const part1 = baseText;
+  const part2 = displayedText.substring(baseText.length);
+
+  return (
+    <span className="relative inline">
+      <span>{part1}</span>
+      <span className="text-transparent bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 bg-clip-text">
+        {part2}
+      </span>
+      {index < text.length && (
+        <span className="inline-block w-[3px] h-[0.85em] bg-indigo-400 ml-1 translate-y-[2px] animate-pulse" />
+      )}
+    </span>
+  );
+}
+
 export default function App() {
   // Page state: 'upload' | 'editor'
   const [activeStep, setActiveStep] = useState<"upload" | "editor">("upload");
@@ -968,8 +1012,8 @@ export default function App() {
                   <span className="px-3.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono rounded-full font-bold inline-block mx-auto">
                     No sign-up required.
                   </span>
-                  <h2 className="font-heading font-black text-[32px] sm:text-[48px] leading-tight tracking-tight text-white max-w-xl mx-auto line-clamp-3 sm:line-clamp-none">
-                    Instantly rewrite wordy files into <span className="text-transparent bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 bg-clip-text">designer slides.</span>
+                  <h2 className="font-heading font-black text-[32px] sm:text-[48px] leading-tight tracking-tight text-white max-w-xl mx-auto line-clamp-3 sm:line-clamp-none min-h-[96px] sm:min-h-[144px]">
+                    <TypewriterText />
                   </h2>
                   <p className="text-[14px] sm:text-sm text-neutral-400 leading-normal max-w-md mx-auto line-clamp-2 sm:line-clamp-none">
                     Upload any Microsoft Word document. Our advanced AI system constructs beautiful, custom-branded presentation slides instantly.
