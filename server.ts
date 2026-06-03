@@ -291,4 +291,10 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only start the listening server if we are running in a standalone Node process
+// (On Vercel, Vercel loads the exported app and handles routing natively, process.env.VERCEL is true)
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
