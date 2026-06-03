@@ -1,0 +1,6 @@
+{
+  "name": "Slidesss",
+  "description": "Convert business Word documents directly into professional slide presentation decks, edit slide contents, apply dynamic branding, search high-re Unsplash graphics, and export to PPTX or PDF instantly.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
