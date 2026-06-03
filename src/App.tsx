@@ -641,8 +641,32 @@ export default function App() {
   };
 
   return (
-    <div id="app-root" className="min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-indigo-600 selection:text-white flex flex-col">
+    <div id="app-root" className="relative min-h-screen bg-neutral-950 text-neutral-100 font-sans selection:bg-indigo-600 selection:text-white flex flex-col">
       
+      {/* COSMIC NEON INTERGALACTIC BACKGROUND */}
+      <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden no-print">
+        {/* Deep stellar gradient */}
+        <div className="absolute inset-0 bg-radial-at-t from-indigo-950/20 via-neutral-950 to-neutral-950" />
+        
+        {/* Neon laser structural alignment grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e1b4b_1px,transparent_1px),linear-gradient(to_bottom,#1e1b4b_1px,transparent_1px)] bg-[size:4.5rem_4.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)] opacity-25" />
+        
+        {/* Glowing Nebula dust clouds */}
+        <div className="absolute top-[10%] left-[5%] w-[450px] h-[450px] rounded-full bg-indigo-500/10 blur-[130px] mix-blend-screen" />
+        <div className="absolute top-[30%] right-[-5%] w-[400px] h-[400px] rounded-full bg-pink-500/8 blur-[110px] mix-blend-screen" />
+        <div className="absolute bottom-[10%] left-[25%] w-[600px] h-[600px] rounded-full bg-blue-600/5 blur-[160px] mix-blend-screen" />
+        <div className="absolute top-[5%] left-[50%] -translate-x-1/2 w-80 h-80 rounded-full bg-amber-500/5 blur-[110px] mix-blend-screen" />
+
+        {/* Dynamic shining star assets */}
+        <div className="absolute top-[12%] left-[24%] w-1.5 h-1.5 bg-indigo-300 rounded-full animate-pulse opacity-60" />
+        <div className="absolute top-[38%] left-[78%] w-1 h-1 bg-pink-300 rounded-full animate-ping opacity-40" />
+        <div className="absolute top-[62%] left-[12%] w-1.5 h-1.5 bg-amber-200 rounded-full animate-pulse opacity-50" />
+        <div className="absolute top-[82%] left-[58%] w-2 h-2 bg-blue-400 rounded-full animate-pulse opacity-75" />
+        <div className="absolute top-[48%] left-[42%] w-0.5 h-0.5 bg-white rounded-full opacity-35" />
+        <div className="absolute top-[24%] left-[88%] w-1 h-1 bg-white rounded-full opacity-50 animate-pulse" />
+        <div className="absolute top-[70%] left-[80%] w-0.5 h-0.5 bg-white rounded-full opacity-30" />
+      </div>
+
       {/* HEADER BAR */}
       <header id="app-header" className="no-print border-b border-neutral-900 bg-neutral-950/80 backdrop-blur-md px-4 sm:px-6 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-4 sticky top-0 z-40">
         <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
@@ -756,23 +780,27 @@ export default function App() {
         {activeStep === "upload" ? (
           
           /* VIEW 1: LANDING & INITIAL CONVERSION STEP (CENTERED UX) */
-          <div id="view-upload-sandbox" className="flex-1 max-w-3xl w-full mx-auto px-6 py-12 flex flex-col items-center justify-start space-y-8">
+          <div id="view-upload-sandbox" className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 md:py-12 flex flex-col items-center justify-start space-y-8">
             
-            {/* HERO INTRODUCTION ZONE */}
-            <div className="text-center space-y-4 max-w-2xl px-2 sm:px-0">
-              <span className="px-3.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono rounded-full font-bold inline-block mx-auto">
-                No sign-up required.
-              </span>
-              <h2 className="font-heading font-black text-[32px] sm:text-[48px] leading-tight tracking-tight text-white max-w-xl mx-auto line-clamp-3 sm:line-clamp-none">
-                Instantly rewrite wordy files into <span className="text-transparent bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 bg-clip-text">designer slides.</span>
-              </h2>
-              <p className="text-[14px] sm:text-sm text-neutral-400 leading-normal max-w-md mx-auto line-clamp-2 sm:line-clamp-none">
-                Upload any Microsoft Word document. Our advanced AI system constructs beautiful, custom-branded presentation slides instantly.
-              </p>
-            </div>
+            {/* GRADIENT CONTAINER ENVELOPING THE BODY SECTION */}
+            <div className="w-[90%] md:w-full bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 p-[2px] rounded-[40px] shadow-2xl">
+              <div className="bg-neutral-950 rounded-[38px] p-6 sm:p-10 space-y-8">
+                
+                {/* HERO INTRODUCTION ZONE */}
+                <div className="text-center space-y-4 max-w-2xl px-2 sm:px-0 mx-auto">
+                  <span className="px-3.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono rounded-full font-bold inline-block mx-auto">
+                    No sign-up required.
+                  </span>
+                  <h2 className="font-heading font-black text-[32px] sm:text-[48px] leading-tight tracking-tight text-white max-w-xl mx-auto line-clamp-3 sm:line-clamp-none">
+                    Instantly rewrite wordy files into <span className="text-transparent bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 bg-clip-text">designer slides.</span>
+                  </h2>
+                  <p className="text-[14px] sm:text-sm text-neutral-400 leading-normal max-w-md mx-auto line-clamp-2 sm:line-clamp-none">
+                    Upload any Microsoft Word document. Our advanced AI system constructs beautiful, custom-branded presentation slides instantly.
+                  </p>
+                </div>
 
-            {/* INTEGRATED SEMANTIC PROCESSING CONTAINER (DRAG AND DROP BOX COMES NEXT) */}
-            <div className="w-full bg-neutral-900 border border-neutral-800 rounded-3xl p-6 lg:p-8 space-y-6 shadow-xl shadow-indigo-950/10">
+                {/* INTEGRATED SEMANTIC PROCESSING CONTAINER (DRAG AND DROP BOX COMES NEXT) */}
+                <div className="w-full bg-neutral-900/65 backdrop-blur-xl border border-neutral-800/90 rounded-3xl p-6 lg:p-8 space-y-6 shadow-xl shadow-indigo-950/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-indigo-400">
                   <FileText className="w-4 h-4" />
@@ -782,7 +810,7 @@ export default function App() {
                   <button
                     id="btn-load-sample"
                     onClick={handleLoadSample}
-                    className="px-2.5 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-750 text-indigo-300 text-[10px] font-semibold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer"
+                    className="px-2.5 py-1.5 bg-neutral-850/70 hover:bg-neutral-800/90 border border-neutral-750 text-indigo-300 text-[10px] font-semibold rounded-lg flex items-center space-x-1.5 transition-all cursor-pointer"
                     title="Load document text from sample corporate strategy"
                   >
                     <Sliders className="w-3 h-3" />
@@ -801,7 +829,7 @@ export default function App() {
               </div>
 
               {/* FILE SELECTOR CONTAINER (DRAG AND DROP BOX COMES IMMEDIATELY NEXT) */}
-              <div className="relative border-2 border-dashed border-neutral-800 hover:border-indigo-500 bg-neutral-950 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all min-h-48 group">
+              <div className="relative border-2 border-dashed border-neutral-800 hover:border-indigo-500 bg-neutral-950/35 hover:bg-neutral-950/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center transition-all min-h-48 group">
                 <input
                   id="file-upload-input"
                   type="file"
@@ -825,7 +853,7 @@ export default function App() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="bg-neutral-900 text-neutral-400 p-3.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all w-12 h-12 flex items-center justify-center mx-auto">
+                    <div className="bg-neutral-900/50 text-neutral-400 p-3.5 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all w-12 h-12 flex items-center justify-center mx-auto">
                       <Upload className="w-5 h-5" />
                     </div>
                     <div>
@@ -851,7 +879,7 @@ export default function App() {
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
                   placeholder="Review parsed document texts, or type your slide notes directly here to construct layouts..."
-                  className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 text-xs text-neutral-300 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 resize-none h-36"
+                  className="bg-neutral-950/35 border border-neutral-800 rounded-xl p-4 text-xs text-neutral-300 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 focus:bg-neutral-950/60 resize-none h-36"
                 />
               </div>
 
@@ -870,7 +898,7 @@ export default function App() {
                       className={`text-left p-3 rounded-xl border transition-all flex flex-col justify-between h-20 ${
                         selectedThemeId === t.id
                           ? "bg-indigo-950/20 border-indigo-500/80 shadow-md shadow-indigo-500/10"
-                          : "bg-neutral-950/60 border-neutral-800 hover:border-neutral-750"
+                          : "bg-neutral-950/35 border-neutral-800 hover:border-neutral-750"
                       }`}
                     >
                       <span className="font-bold text-xs text-white block">{t.name}</span>
@@ -918,6 +946,8 @@ export default function App() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
 
             {/* DEPLOYMENT LINE FOOTER */}
             <div className="text-neutral-500 text-[10px] font-mono pt-2 flex items-center space-x-2 justify-center pb-24 sm:pb-0">
