@@ -45,6 +45,61 @@ Comparison reveals severe gaps in old-world tech:
 - PHASE III (AUGUST): Open Unsplash visual search databases to users.
 - PHASE IV (SEPTEMBER): General market announcement.`;
 
+// Diagnostic Helper to structure raw error string feeds into high-impact user insights
+interface ParsedError {
+  title: string;
+  explanation: string;
+  cause: string;
+  cta: string;
+}
+
+function getDetailedError(message: string | null): ParsedError {
+  if (!message) {
+    return {
+      title: "Operation Failed Unexpectedly",
+      explanation: "No raw system error records were piped.",
+      cause: "This is usually caused by an abort sequence or a timed-out silent transition.",
+      cta: "Try loading our system sample text first using 'Load Text' button to verify state."
+    };
+  }
+
+  let title = "Failed to Process Action";
+  let explanation = message;
+  let cause = "The background service or host interface reported an unexpected interrupt.";
+  let cta = "Please try again. If the issue keeps happening, load our sample presentation text or copy/paste smaller paragraphs.";
+
+  const lower = message.toLowerCase();
+
+  if (lower.includes("invalid json") || lower.includes("unexpected token") || lower.includes("position") || lower.includes("pars")) {
+    title = "Invalid Server JSON Response";
+    explanation = "The presentation parsing logic received a non-JSON data stream instead of valid slide decks configuration. Usually, this means the server returned an HTML error or message page.";
+    cause = "This typically indicates that the Cloud container or development server returned a temporary service notice or HTML routing message instead of the raw data. It can occur on startup cold starts, routing redirects, or database sync drops.";
+    cta = "Please wait a few seconds and click the 'Generate PDF/PPTX' action again. If you continue to see this, write or paste simpler formatting guidelines in the editor box.";
+  } else if (lower.includes("docx") || lower.includes("corrupt") || lower.includes("mammoth")) {
+    title = "Word Document Reader Failure";
+    explanation = "The Mammoth file reader was unable to parse the selected file into clear editable Markdown/HTML content.";
+    cause = "This happens when the uploaded file is encrypted with an owner password, is structurally corrupted, or is stored in a legacy format such as real-old .doc, .pages, or rich text RTF style sheet drafts.";
+    cta = "Please ensure the file is a modern Word archive ending with '.docx'. If not, simply open the document in your normal editor, copy the core text, and paste it directly into our 'Manual Outline Input editor' zone below.";
+  } else if (lower.includes("empty") || lower.includes("please select a word") || lower.includes("outline")) {
+    title = "Empty Source Input Detected";
+    explanation = "There is no input text available to parse and reconstruct into graphical slides.";
+    cause = "The manual editor field is blank, or the Word document processing finished with no text characters.";
+    cta = "Type some presentation headlines in our manual text editor, or click the 'Load Text' preset helper button to instantly populate a beautiful corporate slide blueprint.";
+  } else if (lower.includes("gemini") || lower.includes("refused") || lower.includes("api") || lower.includes("quota") || lower.includes("key")) {
+    title = "AI Reasoner Engine Unreachable";
+    explanation = "The custom generative AI backend refused our prompt proposal or failed to formulate layouts.";
+    cause = "This typically happens if the GEMINI_API_KEY is either missing in system settings, has expired, or the service quota rate limits were temporarily saturated.";
+    cta = "Verify that the server has a valid GEMINI_API_KEY set in its environment/settings. You can also recheck your active internet configuration and click 'Convert' again to re-trigger.";
+  } else if (lower.includes("pptx") || lower.includes("powerpoint") || lower.includes("export") || lower.includes("printer") || lower.includes("print")) {
+    title = "Slide Generation Export Obstacle";
+    explanation = "The client-side PPTX/PDF rendering engine encountered a layout bottleneck or page setup issue.";
+    cause = "This can happen if high-res remote images fail to download dynamically, or memory constraints on active browser tabs are reached.";
+    cta = "Ensure you are using a modern browser such as Chrome or Edge. Alternatively, try reloading the web page, choosing a different slide background color, or selecting fewer text bullets.";
+  }
+
+  return { title, explanation, cause, cta };
+}
+
 export default function App() {
   // Page state: 'upload' | 'editor'
   const [activeStep, setActiveStep] = useState<"upload" | "editor">("upload");
@@ -266,12 +321,31 @@ export default function App() {
         })
       });
 
-      if (!res.ok) {
-        const errPayload = await res.json();
-        throw new Error(errPayload.error || "Generation endpoint refused to formulate slide layouts.");
+      let responseText = "";
+      try {
+        responseText = await res.text();
+      } catch (e) {
+        responseText = "";
       }
 
-      const deck = await res.json();
+      if (!res.ok) {
+        let errorMsg = "Generation endpoint refused to formulate slide layouts.";
+        try {
+          const errPayload = JSON.parse(responseText);
+          errorMsg = errPayload.error || errorMsg;
+        } catch (e) {
+          const cleanText = responseText.replace(/<[^>]*>/g, '').trim();
+          errorMsg = `Server returned (${res.status}): ${cleanText.slice(0, 250) || "No response body"}`;
+        }
+        throw new Error(errorMsg);
+      }
+
+      let deck;
+      try {
+        deck = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Failed to parse presentation JSON response from server: ${responseText.slice(0, 150)}`);
+      }
       
       // Inject unique slide IDs and build standard initial presentation state
       const initialSlides = deck.slides.map((slide: any, i: number) => ({
@@ -483,16 +557,37 @@ export default function App() {
         })
       });
 
-      if (!res.ok) {
-        throw new Error("Design Suggestion server endpoint refused proposal.");
+      let responseText = "";
+      try {
+        responseText = await res.text();
+      } catch (e) {
+        responseText = "";
       }
 
-      const suggestion = await res.json();
+      if (!res.ok) {
+        let errorMsg = "Design Suggestion server endpoint refused proposal.";
+        try {
+          const errPayload = JSON.parse(responseText);
+          errorMsg = errPayload.error || errorMsg;
+        } catch (e) {
+          const cleanText = responseText.replace(/<[^>]*>/g, '').trim();
+          errorMsg = `Server returned (${res.status}): ${cleanText.slice(0, 250) || "No response body"}`;
+        }
+        throw new Error(errorMsg);
+      }
+
+      let suggestion;
+      try {
+        suggestion = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error("Design Suggestion response was not valid JSON.");
+      }
+
       setAiSuggestion(suggestion);
       setShowSuggestionModal(true);
     } catch (err: any) {
       console.error(err);
-      setErrorMessage("Could not generate design suggest. Ensure server.ts API routes are responsive.");
+      setErrorMessage(err.message || "Could not generate design suggestion. Ensure server.ts API routes are responsive.");
     } finally {
       setIsSuggestingAI(false);
     }
@@ -767,27 +862,109 @@ export default function App() {
         )}
       </header>
 
-      {/* ERROR MESSAGE TOAST */}
-      {errorMessage && (
-        <div id="error-banner" className="no-print bg-red-950/60 border-b border-red-900/50 px-6 py-3 text-red-200 text-xs flex items-center justify-between">
-          <span className="font-mono">{errorMessage}</span>
-          <button onClick={() => setErrorMessage(null)} className="hover:text-white font-bold p-1">✕</button>
-        </div>
-      )}
+      {/* COMPREHENSIVE PRO DIAGNOSTICS ERROR MODAL */}
+      {errorMessage && (() => {
+        const errDetails = getDetailedError(errorMessage);
+        return (
+          <div id="modal-error-diagnostics" className="no-print fixed inset-0 z-50 bg-neutral-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl shadow-red-950/10 animate-in zoom-in-95 duration-200 text-left">
+              
+              {/* Header */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center space-x-3 text-red-400">
+                  <div className="p-2 sm:p-2.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-400 shrink-0">
+                    <X className="w-5 h-5 font-bold animate-pulse" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-red-500 font-extrabold block mb-0.5">System Diagnostics</span>
+                    <h3 className="font-heading font-black text-base sm:text-lg text-white leading-tight">
+                      {errDetails.title}
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  id="btn-close-error-modal-top"
+                  onClick={() => setErrorMessage(null)}
+                  className="text-neutral-500 hover:text-white transition-all text-sm p-1.5 hover:bg-neutral-800 rounded-lg cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="space-y-4 text-xs sm:text-[13px] leading-relaxed">
+                {/* 1. What directly happened */}
+                <div className="space-y-1.5">
+                  <span className="text-neutral-500 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider block font-bold">What Happened:</span>
+                  <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-2xl font-mono text-red-300 text-xs leading-relaxed select-text max-h-32 overflow-y-auto custom-scrollbar break-all">
+                    {errDetails.explanation}
+                  </div>
+                </div>
+
+                {/* 2. Conceptual context of why this might happen */}
+                <div className="space-y-1.5">
+                  <span className="text-neutral-500 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider block font-bold">Why it happened:</span>
+                  <p className="text-neutral-400 px-1 leading-relaxed text-xs">
+                    {errDetails.cause}
+                  </p>
+                </div>
+
+                {/* 3. Action advice - what to do next */}
+                <div className="bg-indigo-950/20 border border-indigo-500/20 p-4 sm:p-5 rounded-2xl space-y-2">
+                  <div className="flex items-center space-x-1.5 text-indigo-400 font-bold">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span className="text-[10px] font-mono uppercase tracking-wider">What to do next:</span>
+                  </div>
+                  <p className="text-neutral-200 text-xs leading-relaxed font-medium">
+                    {errDetails.cta}
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer CTA Button Controls */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-neutral-800/60">
+                <button
+                  id="btn-error-close-primary"
+                  onClick={() => setErrorMessage(null)}
+                  className="w-full sm:w-auto px-4.5 py-2.5 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Close Window
+                </button>
+                <button
+                  id="btn-error-retry-action"
+                  onClick={() => {
+                    setErrorMessage(null);
+                    if (!rawText.trim()) {
+                      handleLoadSample();
+                    } else {
+                      handleGeneratePresentation();
+                    }
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center space-x-1.5 transition cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Execute Auto-Retry Process</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
       {/* MAIN SCREEN WRAP */}
       <main className="no-print flex-1 flex flex-col">
         {activeStep === "upload" ? (
           
           /* VIEW 1: LANDING & INITIAL CONVERSION STEP (CENTERED UX) */
-          <div id="view-upload-sandbox" className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 md:py-12 flex flex-col items-center justify-start space-y-8">
-            
-            {/* GRADIENT CONTAINER ENVELOPING THE BODY SECTION */}
-            <div className="w-[90%] md:w-full bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 p-[2px] rounded-[40px] shadow-2xl">
-              <div className="bg-neutral-950 rounded-[38px] p-6 sm:p-10 space-y-8">
+          <div id="view-upload-sandbox" className="flex-1 w-full bg-gradient-to-r from-indigo-400 via-pink-400 to-amber-400 p-[16px] sm:p-[40px]">
+            <div className="w-full bg-neutral-950 rounded-[24px] py-12 px-4 sm:px-6 md:px-8 flex flex-col items-center justify-start space-y-12 min-h-screen">
+              
+              {/* Max width container for keeping content elegant and readable on desktop */}
+              <div className="max-w-3xl w-full flex flex-col items-center justify-start space-y-10">
                 
                 {/* HERO INTRODUCTION ZONE */}
-                <div className="text-center space-y-4 max-w-2xl px-2 sm:px-0 mx-auto">
+                <div className="text-center space-y-4 max-w-2xl px-2 sm:px-0">
                   <span className="px-3.5 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-mono rounded-full font-bold inline-block mx-auto">
                     No sign-up required.
                   </span>
@@ -946,42 +1123,17 @@ export default function App() {
                 </p>
               </div>
             </div>
+
           </div>
+
+          {/* DEPLOYMENT LINE FOOTER */}
+          <div className="text-neutral-500 text-[10px] font-mono pt-4 flex items-center space-x-2 justify-center pb-8">
+            <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+            <span>Express Server Engine Ready  |  Gemini Core v3.5-flash Online</span>
+          </div>
+
         </div>
-
-            {/* DEPLOYMENT LINE FOOTER */}
-            <div className="text-neutral-500 text-[10px] font-mono pt-2 flex items-center space-x-2 justify-center pb-24 sm:pb-0">
-              <span className="inline-block w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-              <span>Express Server Engine Ready  |  Gemini Core v3.5-flash Online</span>
-            </div>
-
-            {/* MOBILE STICKY FLOATING CTA COMPONENT */}
-            <div className="block sm:hidden fixed bottom-[40px] left-4 right-4 z-50">
-              <button
-                id="btn-generate-deck-mobile"
-                disabled={!rawText.trim() || isGenerating}
-                onClick={handleGeneratePresentation}
-                className={`w-full py-3.5 px-6 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center space-x-2 shadow-2xl border border-neutral-700/40 backdrop-blur-md transition-all ${
-                  isGenerating || !rawText.trim()
-                    ? "bg-neutral-900 border-neutral-800 text-neutral-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-indigo-600 via-pink-600 to-indigo-600 text-white hover:opacity-95 shadow-indigo-600/40 cursor-pointer"
-                }`}
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>{statusMessage} ({generationProgress}%)</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
-                    <span>Generate PDF/PPTX</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-          </div>
+      </div>
         ) : (
           
           /* VIEW 2: SLIDE PRESENTATION MASTER STUDIO (PRO SLIDE EDITOR) */
