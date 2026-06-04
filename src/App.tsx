@@ -444,6 +444,12 @@ export default function App() {
 
   // Slide navigation actions
   const activeSlide = presentation?.slides[activeSlideIndex] || null;
+  const slideBg = activeSlide?.bgColor || presentation?.palette.background || "#000000";
+  const slideText = activeSlide?.textColor || presentation?.palette.text || "#FFFFFF";
+  const slideAccent = activeSlide?.accentColor || presentation?.palette.accent || "#3B82F6";
+  const slidePrimary = activeSlide?.primaryColor || presentation?.palette.primary || "#3B82F6";
+  const slideCardBg = activeSlide?.cardBgColor || presentation?.palette.cardBg || "#111827";
+  const slideBorder = activeSlide?.borderColor || presentation?.palette.border || "#1F2937";
 
   const updateActiveSlide = (fields: Partial<Slide>) => {
     if (!presentation || !activeSlide) return;
@@ -526,50 +532,23 @@ export default function App() {
   };
 
   // Unsplash search trigger
-  const triggerUnsplashSearch = () => {
+  const triggerUnsplashSearch = async () => {
     setIsSearchingUnsplash(true);
-    // Mimic real-time API filtering from curated assets fallback
-    setTimeout(() => {
-      const term = unsplashSearch.trim().toLowerCase();
-      let results: any[] = [];
-      if (term) {
-        // Build dynamic high relevance Unsplash result cards based on search input
-        results = [
-          {
-            id: "res-1",
-            url: `https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1200&sig=1`,
-            thumbnail: `https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=300&sig=1`,
-            title: `Marketing for '${term}'`,
-            author: "Corporate Photographer"
-          },
-          {
-            id: "res-2",
-            url: `https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=1200&sig=2`,
-            thumbnail: `https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=300&sig=2`,
-            title: `'${term}' Workplace Collaboration`,
-            author: "Studio Focus"
-          },
-          {
-            id: "res-3",
-            url: `https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?auto=format&fit=crop&q=80&w=1200&sig=3`,
-            thumbnail: `https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?auto=format&fit=crop&q=80&w=300&sig=3`,
-            title: `${term} Digital Strategy`,
-            author: "Abstract Designer"
-          },
-          {
-            id: "res-4",
-            url: `https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=1200&sig=4`,
-            thumbnail: `https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&q=80&w=300&sig=4`,
-            title: `${term} Flowchart & Metrics`,
-            author: "Analytics Core"
-          }
-        ];
-      } else {
-        results = CURATED_UNSPLASH_IMAGES[unsplashCategory] || [];
+    try {
+      const term = unsplashSearch.trim();
+      const searchQuery = term || unsplashCategory;
+      const res = await fetch(`/api/images/search?q=${encodeURIComponent(searchQuery)}`);
+      if (!res.ok) {
+        throw new Error("Failed to load images");
       }
-      setUnsplashResults(results);
+      const data = await res.json();
+      setUnsplashResults(data.results || []);
+    } catch (e) {
+      console.error("Failed to query live images:", e);
+      setUnsplashResults(CURATED_UNSPLASH_IMAGES[unsplashCategory] || []);
+    } finally {
       setIsSearchingUnsplash(false);
-    }, 500);
+    }
   };
 
   useEffect(() => {
@@ -645,7 +624,14 @@ export default function App() {
       layout: aiSuggestion.layout as SlideLayout,
       notes: aiSuggestion.notes,
       imageUrl: getKeywordImage(aiSuggestion.imageSearchQuery),
-      imageSearchQuery: aiSuggestion.imageSearchQuery
+      imageSearchQuery: aiSuggestion.imageSearchQuery,
+      badge: aiSuggestion.badge,
+      bgColor: aiSuggestion.bgColor,
+      textColor: aiSuggestion.textColor,
+      accentColor: aiSuggestion.accentColor,
+      primaryColor: aiSuggestion.primaryColor,
+      cardBgColor: aiSuggestion.cardBgColor,
+      borderColor: aiSuggestion.borderColor
     });
     setShowSuggestionModal(false);
     setAiSuggestion(null);
@@ -1298,16 +1284,16 @@ export default function App() {
                       id="slide-preview-viewport"
                       className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-neutral-800/80 slide-preview-container print-page"
                       style={{
-                        backgroundColor: presentation?.palette.background,
-                        color: presentation?.palette.text,
-                        "--bg-color": presentation?.palette.background,
-                        "--text-color": presentation?.palette.text
+                        backgroundColor: slideBg,
+                        color: slideText,
+                        "--bg-color": slideBg,
+                        "--text-color": slideText
                       } as React.CSSProperties}
                     >
                       
                       {/* ASYMMETRICAL DECORATIVE GRID LINES FOR BRUTALIST & SWISS DESIGN */}
                       {presentation?.themeId === "brutalist-mono" && (
-                        <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: presentation.palette.text, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
+                        <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: slideText, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
                       )}
 
                       {/* DECORATIVE LIGHT SHAPES FOR AVANTGARDE */}
@@ -1329,7 +1315,7 @@ export default function App() {
                         <div className="flex items-center justify-between no-print mb-2 border-b border-neutral-700/10 pb-2">
                           <span
                             className="text-[9px] font-mono tracking-widest font-black uppercase"
-                            style={{ color: presentation?.palette.accent }}
+                            style={{ color: slideAccent }}
                           >
                             Excelsior Q3 Strategy Deck
                           </span>
@@ -1344,15 +1330,29 @@ export default function App() {
                             
                             /* LAYOUT 1: TITLE SLIDE */
                             <div className="text-center space-y-6 py-6">
+                              {activeSlide.badge && (
+                                <div className="mb-1">
+                                  <span
+                                    className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                    style={{
+                                      backgroundColor: `${slideAccent}1d`,
+                                      color: slideAccent,
+                                      borderColor: `${slideAccent}3a`
+                                    }}
+                                  >
+                                    {activeSlide.badge}
+                                  </span>
+                                </div>
+                              )}
                               <h3
                                 className={`text-4xl lg:text-5xl tracking-tight leading-tight ${activePresetTheme.fontHeading}`}
-                                style={{ color: presentation?.palette.primary }}
+                                style={{ color: slidePrimary }}
                               >
                                 {presentation?.title || "BUSINESS PRESENTATION"}
                               </h3>
                               <p
                                 className="text-lg font-mono font-medium max-w-2xl mx-auto"
-                                style={{ color: presentation?.palette.text }}
+                                style={{ color: slideText }}
                               >
                                 {activeSlide.title}
                               </p>
@@ -1362,7 +1362,7 @@ export default function App() {
                                     <span
                                       key={idx}
                                       className="text-xs px-3 py-1 bg-neutral-500/5 border border-neutral-750/30 rounded-full font-medium"
-                                      style={{ color: presentation?.palette.accent }}
+                                      style={{ color: slideAccent }}
                                     >
                                       {point}
                                     </span>
@@ -1375,27 +1375,43 @@ export default function App() {
                             
                             /* LAYOUT 2: TWO COLUMN SPLIT */
                             <div className="space-y-6">
-                              <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: presentation?.palette.primary }}>
-                                {activeSlide.title}
-                              </h3>
+                              <div>
+                                {activeSlide.badge && (
+                                  <div className="mb-2">
+                                    <span
+                                      className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                      style={{
+                                        backgroundColor: `${slideAccent}1d`,
+                                        color: slideAccent,
+                                        borderColor: `${slideAccent}3a`
+                                      }}
+                                    >
+                                      {activeSlide.badge}
+                                    </span>
+                                  </div>
+                                )}
+                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                  {activeSlide.title}
+                                </h3>
+                              </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: presentation?.palette.cardBg, border: `1px solid ${presentation?.palette.border}` }}>
-                                  <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: presentation?.palette.accent }} />
+                                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: slideCardBg, border: `1px solid ${slideBorder}` }}>
+                                  <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slideAccent }} />
                                   <ul className="space-y-2.5">
                                     {activeSlide.content.slice(0, Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => (
-                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: presentation?.palette.text }}>
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation?.palette.primary }} />
+                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
+                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
                                         <span>{bullet}</span>
                                       </li>
                                     ))}
                                   </ul>
                                 </div>
-                                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: presentation?.palette.cardBg, border: `1px solid ${presentation?.palette.border}` }}>
-                                  <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: presentation?.palette.primary }} />
+                                <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: slideCardBg, border: `1px solid ${slideBorder}` }}>
+                                  <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slidePrimary }} />
                                   <ul className="space-y-2.5">
                                     {activeSlide.content.slice(Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => (
-                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: presentation?.palette.text }}>
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation?.palette.accent }} />
+                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
+                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                         <span>{bullet}</span>
                                       </li>
                                     ))}
@@ -1408,15 +1424,29 @@ export default function App() {
                             
                             /* LAYOUT 3: STYLIZED QUOTE */
                             <div className="text-center max-w-4xl mx-auto space-y-4 py-4">
-                              <span className="text-5xl leading-none font-black opacity-30 block" style={{ color: presentation?.palette.accent }}>“</span>
+                              {activeSlide.badge && (
+                                <div className="mb-2">
+                                  <span
+                                    className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                    style={{
+                                      backgroundColor: `${slideAccent}1d`,
+                                      color: slideAccent,
+                                      borderColor: `${slideAccent}3a`
+                                    }}
+                                  >
+                                    {activeSlide.badge}
+                                  </span>
+                                </div>
+                              )}
+                              <span className="text-5xl leading-none font-black opacity-30 block" style={{ color: slideAccent }}>“</span>
                               <h4
                                 className="text-xl lg:text-2xl font-black italic tracking-wide"
-                                style={{ color: presentation?.palette.text }}
+                                style={{ color: slideText }}
                               >
                                 {activeSlide.title}
                               </h4>
                               {activeSlide.content.length > 0 && (
-                                <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: presentation?.palette.primary }}>
+                                <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: slidePrimary }}>
                                   - {activeSlide.content.join(" & ")}
                                 </p>
                               )}
@@ -1442,13 +1472,29 @@ export default function App() {
                                 )}
                               </div>
                               <div className="space-y-4">
-                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: presentation?.palette.primary }}>
-                                  {activeSlide.title}
-                                </h3>
+                                <div>
+                                  {activeSlide.badge && (
+                                    <div className="mb-2">
+                                      <span
+                                        className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                        style={{
+                                          backgroundColor: `${slideAccent}1d`,
+                                          color: slideAccent,
+                                          borderColor: `${slideAccent}3a`
+                                        }}
+                                      >
+                                        {activeSlide.badge}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                    {activeSlide.title}
+                                  </h3>
+                                </div>
                                 <ul className="space-y-3">
                                   {activeSlide.content.map((bullet, idx) => (
-                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: presentation?.palette.text }}>
-                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation?.palette.accent }} />
+                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
+                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                       <span>{bullet}</span>
                                     </li>
                                   ))}
@@ -1461,13 +1507,29 @@ export default function App() {
                             /* LAYOUT 5: VISUAL RIGHT SPLIT */
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center h-full">
                               <div className="space-y-4">
-                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: presentation?.palette.primary }}>
-                                  {activeSlide.title}
-                                </h3>
+                                <div>
+                                  {activeSlide.badge && (
+                                    <div className="mb-2">
+                                      <span
+                                        className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                        style={{
+                                          backgroundColor: `${slideAccent}1d`,
+                                          color: slideAccent,
+                                          borderColor: `${slideAccent}3a`
+                                        }}
+                                      >
+                                        {activeSlide.badge}
+                                      </span>
+                                    </div>
+                                  )}
+                                  <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                    {activeSlide.title}
+                                  </h3>
+                                </div>
                                 <ul className="space-y-3">
                                   {activeSlide.content.map((bullet, idx) => (
-                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: presentation?.palette.text }}>
-                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation?.palette.accent }} />
+                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
+                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                       <span>{bullet}</span>
                                     </li>
                                   ))}
@@ -1489,9 +1551,25 @@ export default function App() {
                             
                             /* LAYOUT 6: METRICS BENTO GRID */
                             <div className="space-y-4">
-                              <h3 className={`text-xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: presentation?.palette.primary }}>
-                                {activeSlide.title}
-                              </h3>
+                              <div>
+                                {activeSlide.badge && (
+                                  <div className="mb-2">
+                                    <span
+                                      className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                      style={{
+                                        backgroundColor: `${slideAccent}1d`,
+                                        color: slideAccent,
+                                        borderColor: `${slideAccent}3a`
+                                      }}
+                                    >
+                                      {activeSlide.badge}
+                                    </span>
+                                  </div>
+                                )}
+                                <h3 className={`text-xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                  {activeSlide.title}
+                                </h3>
+                              </div>
                               <div className="grid grid-cols-2 gap-4">
                                 {[0, 1, 2, 3].map((val) => {
                                   const textVal = activeSlide.content[val] || "N/A metric value";
@@ -1508,11 +1586,11 @@ export default function App() {
                                       key={val}
                                       className="p-4 rounded-xl space-y-1 transition-all"
                                       style={{
-                                        backgroundColor: presentation?.palette.cardBg,
-                                        border: `1px solid ${presentation?.palette.border}`
+                                        backgroundColor: slideCardBg,
+                                        border: `1px solid ${slideBorder}`
                                       }}
                                     >
-                                      <span className="text-2xl font-heading font-black block" style={{ color: presentation?.palette.accent }}>
+                                      <span className="text-2xl font-heading font-black block" style={{ color: slideAccent }}>
                                         {metricNum}
                                       </span>
                                       <span className="text-[10px] font-mono font-medium block leading-tight text-neutral-400 uppercase">
@@ -1528,13 +1606,29 @@ export default function App() {
                             
                             /* LAYOUT 7: DEFAULT / HEADLINE BULLET */
                             <div className="space-y-4">
-                              <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: presentation?.palette.primary }}>
-                                {activeSlide.title}
-                              </h3>
+                              <div>
+                                {activeSlide.badge && (
+                                  <div className="mb-2">
+                                    <span
+                                      className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                      style={{
+                                        backgroundColor: `${slideAccent}1d`,
+                                        color: slideAccent,
+                                        borderColor: `${slideAccent}3a`
+                                      }}
+                                    >
+                                      {activeSlide.badge}
+                                    </span>
+                                  </div>
+                                )}
+                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                  {activeSlide.title}
+                                </h3>
+                              </div>
                               <ul className="space-y-3.5">
                                 {activeSlide.content.map((bullet, idx) => (
-                                  <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: presentation?.palette.text }}>
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: presentation?.palette.accent }} />
+                                  <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: slideAccent }} />
                                     <span>{bullet}</span>
                                   </li>
                                 ))}
@@ -1545,7 +1639,7 @@ export default function App() {
 
                         {/* SLIDE FOOTER BRAND LINE */}
                         <div className="flex items-center justify-between mt-4 text-[9px] border-t border-neutral-700/10 pt-2 opacity-60">
-                          <span style={{ color: presentation?.palette.text }}>Excelsior Systems © 2026</span>
+                          <span style={{ color: slideText }}>Excelsior Systems © 2026</span>
                           <span className="font-mono">{presentation?.themeId.toUpperCase()} EDITION</span>
                         </div>
                       </div>
@@ -2053,20 +2147,28 @@ export default function App() {
           {presentation.slides.map((s, index) => {
             const isTitle = s.layout === "title-slide";
             const presetTheme = THEME_PRESETS[presentation.themeId];
+            
+            const slideBg = s.bgColor || presentation.palette.background;
+            const slideText = s.textColor || presentation.palette.text;
+            const slideAccent = s.accentColor || presentation.palette.accent;
+            const slidePrimary = s.primaryColor || presentation.palette.primary;
+            const slideCardBg = s.cardBgColor || presentation.palette.cardBg;
+            const slideBorder = s.borderColor || presentation.palette.border;
+
             return (
               <div
                 key={s.id}
                 className="print-page w-[297mm] h-[210mm] relative p-16 border-b border-neutral-100 flex flex-col justify-between overflow-hidden"
                 style={{
-                  backgroundColor: presentation.palette.background,
-                  color: presentation.palette.text,
-                  "--bg-color": presentation.palette.background,
-                  "--text-color": presentation.palette.text
+                  backgroundColor: slideBg,
+                  color: slideText,
+                  "--bg-color": slideBg,
+                  "--text-color": slideText
                 } as React.CSSProperties}
               >
                 {/* ASYMMETRICAL DECORATIVE GRID LINES FOR BRUTALIST & SWISS DESIGN */}
                 {presentation.themeId === "brutalist-mono" && (
-                  <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: presentation.palette.text, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
+                  <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: slideText, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
                 )}
 
                 {/* DECORATIVE LIGHT SHAPES FOR AVANTGARDE */}
@@ -2084,7 +2186,7 @@ export default function App() {
                 }`}>
                   {/* Header */}
                   <div className="flex justify-between items-center text-xs opacity-60 border-b border-neutral-700/10 pb-2">
-                    <span className="uppercase font-mono font-bold tracking-widest" style={{ color: presentation.palette.accent }}>{presentation.title}</span>
+                    <span className="uppercase font-mono font-bold tracking-widest" style={{ color: slideAccent }}>{presentation.title}</span>
                     <span className="font-mono">Slide {index + 1} of {presentation.slides.length}</span>
                   </div>
 
@@ -2092,10 +2194,24 @@ export default function App() {
                   <div className="my-auto flex flex-col justify-center py-4">
                     {isTitle ? (
                       <div className="text-center space-y-6">
-                        <h1 className={`text-4xl lg:text-5xl tracking-tight leading-tight ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>
+                        {s.badge && (
+                          <div className="mb-1">
+                            <span
+                              className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                              style={{
+                                backgroundColor: `${slideAccent}1d`,
+                                color: slideAccent,
+                                borderColor: `${slideAccent}3a`
+                              }}
+                            >
+                              {s.badge}
+                            </span>
+                          </div>
+                        )}
+                        <h1 className={`text-4xl lg:text-5xl tracking-tight leading-tight ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>
                           {presentation.title}
                         </h1>
-                        <h2 className="text-xl font-mono font-semibold opacity-90">
+                        <h2 className="text-xl font-mono font-semibold opacity-90" style={{ color: slideText }}>
                           {s.title}
                         </h2>
                         {s.content.length > 0 && (
@@ -2104,7 +2220,7 @@ export default function App() {
                               <span
                                 key={idx}
                                 className="text-xs px-3 py-1 bg-neutral-500/10 border border-neutral-700/30 rounded-full font-medium"
-                                style={{ color: presentation.palette.accent }}
+                                style={{ color: slideAccent }}
                               >
                                 {point}
                               </span>
@@ -2114,25 +2230,41 @@ export default function App() {
                       </div>
                     ) : s.layout === "two-column" ? (
                       <div className="space-y-6">
-                        <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>{s.title}</h2>
+                        <div>
+                          {s.badge && (
+                            <div className="mb-2">
+                              <span
+                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                style={{
+                                  backgroundColor: `${slideAccent}1d`,
+                                  color: slideAccent,
+                                  borderColor: `${slideAccent}3a`
+                                }}
+                              >
+                                {s.badge}
+                              </span>
+                            </div>
+                          )}
+                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                        </div>
                         <div className="grid grid-cols-2 gap-8 pt-2">
-                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: presentation.palette.border, backgroundColor: presentation.palette.cardBg }}>
-                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: presentation.palette.accent }} />
+                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slideAccent }} />
                             <ul className="space-y-2.5">
                               {s.content.slice(0, Math.ceil(s.content.length / 2)).map((bullet, idx) => (
-                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: presentation.palette.text }}>
-                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation.palette.primary }} />
+                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: slideText }}>
+                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
                                   <span>{bullet}</span>
                                 </li>
                               ))}
                             </ul>
                           </div>
-                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: presentation.palette.border, backgroundColor: presentation.palette.cardBg }}>
-                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: presentation.palette.primary }} />
+                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slidePrimary }} />
                             <ul className="space-y-2.5">
                               {s.content.slice(Math.ceil(s.content.length / 2)).map((bullet, idx) => (
-                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: presentation.palette.text }}>
-                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation.palette.accent }} />
+                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: slideText }}>
+                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                   <span>{bullet}</span>
                                 </li>
                               ))}
@@ -2142,10 +2274,24 @@ export default function App() {
                       </div>
                     ) : s.layout === "quote-slide" ? (
                       <div className="text-center max-w-2xl mx-auto space-y-4">
-                        <span className="text-6xl leading-none font-black opacity-30 block" style={{ color: presentation.palette.accent }}>“</span>
-                        <h2 className="text-xl lg:text-2xl font-black italic tracking-wide" style={{ color: presentation.palette.text }}>{s.title}</h2>
+                        {s.badge && (
+                          <div className="mb-2">
+                            <span
+                              className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                              style={{
+                                backgroundColor: `${slideAccent}1d`,
+                                color: slideAccent,
+                                borderColor: `${slideAccent}3a`
+                              }}
+                            >
+                              {s.badge}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-6xl leading-none font-black opacity-30 block" style={{ color: slideAccent }}>“</span>
+                        <h2 className="text-xl lg:text-2xl font-black italic tracking-wide" style={{ color: slideText }}>{s.title}</h2>
                         {s.content.length > 0 && (
-                          <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: presentation.palette.primary }}>- {s.content.join(" & ")}</p>
+                          <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: slidePrimary }}>- {s.content.join(" & ")}</p>
                         )}
                       </div>
                     ) : s.layout === "image-left" && s.imageUrl ? (
@@ -2160,11 +2306,27 @@ export default function App() {
                           )}
                         </div>
                         <div className="space-y-4">
-                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>{s.title}</h2>
+                          <div>
+                            {s.badge && (
+                              <div className="mb-2">
+                                <span
+                                  className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                  style={{
+                                    backgroundColor: `${slideAccent}1d`,
+                                    color: slideAccent,
+                                    borderColor: `${slideAccent}3a`
+                                  }}
+                                >
+                                  {s.badge}
+                                </span>
+                              </div>
+                            )}
+                            <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                          </div>
                           <ul className="space-y-2.5">
                             {s.content.map((bullet, idx) => (
-                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: presentation.palette.text }}>
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation.palette.accent }} />
+                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                 <span>{bullet}</span>
                               </li>
                             ))}
@@ -2174,11 +2336,27 @@ export default function App() {
                     ) : s.layout === "image-right" && s.imageUrl ? (
                       <div className="grid grid-cols-2 gap-8 items-center">
                         <div className="space-y-4">
-                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>{s.title}</h2>
+                          <div>
+                            {s.badge && (
+                              <div className="mb-2">
+                                <span
+                                  className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                  style={{
+                                    backgroundColor: `${slideAccent}1d`,
+                                    color: slideAccent,
+                                    borderColor: `${slideAccent}3a`
+                                  }}
+                                >
+                                  {s.badge}
+                                </span>
+                              </div>
+                            )}
+                            <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                          </div>
                           <ul className="space-y-2.5">
                             {s.content.map((bullet, idx) => (
-                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: presentation.palette.text }}>
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation.palette.accent }} />
+                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
+                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                                 <span>{bullet}</span>
                               </li>
                             ))}
@@ -2196,7 +2374,23 @@ export default function App() {
                       </div>
                     ) : s.layout === "stats-bento" ? (
                       <div className="space-y-4">
-                        <h2 className={`text-xl font-bold ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>{s.title}</h2>
+                        <div>
+                          {s.badge && (
+                            <div className="mb-2">
+                              <span
+                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                style={{
+                                  backgroundColor: `${slideAccent}1d`,
+                                  color: slideAccent,
+                                  borderColor: `${slideAccent}3a`
+                                }}
+                              >
+                                {s.badge}
+                              </span>
+                            </div>
+                          )}
+                          <h2 className={`text-xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           {[0, 1, 2, 3].map((val) => {
                             const textVal = s.content[val] || "N/A metric value";
@@ -2212,11 +2406,11 @@ export default function App() {
                                 key={val}
                                 className="p-4 rounded-xl space-y-1"
                                 style={{
-                                  backgroundColor: presentation.palette.cardBg,
-                                  border: `1px solid ${presentation.palette.border}`
+                                  backgroundColor: slideCardBg,
+                                  border: `1px solid ${slideBorder}`
                                 }}
                               >
-                                <span className="text-2xl font-heading font-black block" style={{ color: presentation.palette.accent }}>
+                                <span className="text-2xl font-heading font-black block" style={{ color: slideAccent }}>
                                   {metricNum}
                                 </span>
                                 <span className="text-[10px] font-mono font-medium block leading-tight text-neutral-400 uppercase">
@@ -2229,11 +2423,27 @@ export default function App() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: presentation.palette.primary }}>{s.title}</h2>
+                        <div>
+                          {s.badge && (
+                            <div className="mb-2">
+                              <span
+                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                style={{
+                                  backgroundColor: `${slideAccent}1d`,
+                                  color: slideAccent,
+                                  borderColor: `${slideAccent}3a`
+                                }}
+                              >
+                                {s.badge}
+                              </span>
+                            </div>
+                          )}
+                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                        </div>
                         <ul className="space-y-3.5">
                           {s.content.map((bullet, idx) => (
-                            <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: presentation.palette.text }}>
-                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: presentation.palette.accent }} />
+                            <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
+                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
                               <span>{bullet}</span>
                             </li>
                           ))}
@@ -2244,7 +2454,7 @@ export default function App() {
 
                   {/* Footer */}
                   <div className="flex justify-between items-center text-[10px] opacity-50 border-t pt-4">
-                    <span>Excelsior Systems © 2026</span>
+                    <span style={{ color: slideText }}>Excelsior Systems © 2026</span>
                     <span>PREPARATION LICENSE KEY: SINGLE-USER CONVERTER</span>
                   </div>
                 </div>

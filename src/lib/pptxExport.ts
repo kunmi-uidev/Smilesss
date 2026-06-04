@@ -40,19 +40,36 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
     fontBody = "Calibri";
   }
 
-  const bgHex = cleanHex(palette.background);
-  const textHex = cleanHex(palette.text);
-  const primaryHex = cleanHex(palette.primary);
-  const accentHex = cleanHex(palette.accent);
-  const cardBgHex = cleanHex(palette.cardBg || palette.background);
-
   // Add all slides
   presentation.slides.forEach((slideData: Slide, index: number) => {
     const slide = pptx.addSlide();
-    slide.background = { fill: bgHex };
+    
+    // Resolve slide-specific colors (falling back to theme bounds)
+    const currentBgHex = cleanHex(slideData.bgColor || palette.background);
+    const currentTextHex = cleanHex(slideData.textColor || palette.text);
+    const currentPrimaryHex = cleanHex(slideData.primaryColor || palette.primary);
+    const currentAccentHex = cleanHex(slideData.accentColor || palette.accent);
+    const currentCardBgHex = cleanHex(slideData.cardBgColor || palette.cardBg || palette.background);
+    const currentBorderHex = cleanHex(slideData.borderColor || palette.border);
+
+    slide.background = { fill: currentBgHex };
 
     // Format slide title depending on whether it's a title slide
     const isTitle = slideData.layout === "title-slide";
+
+    // Optional top corner badge
+    if (slideData.badge) {
+      slide.addText(slideData.badge.toUpperCase(), {
+        x: 0.6,
+        y: 0.15,
+        w: 5.0,
+        h: 0.3,
+        fontSize: 10,
+        fontFace: fontBody,
+        color: currentAccentHex,
+        bold: true,
+      });
+    }
 
     if (isTitle) {
       // 1. Title Slide Layout
@@ -63,7 +80,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 1.5,
         fontSize: 36,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
         align: "center",
       });
@@ -75,7 +92,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 1.0,
         fontSize: 20,
         fontFace: fontBody,
-        color: textHex,
+        color: currentTextHex,
         align: "center",
       });
 
@@ -87,7 +104,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           h: 0.6,
           fontSize: 12,
           fontFace: fontBody,
-          color: accentHex,
+          color: currentAccentHex,
           align: "center",
           italic: true,
         });
@@ -103,7 +120,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.8,
         fontSize: 26,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
       });
 
@@ -117,12 +134,12 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.5,
         w: 4.2,
         h: 3.4,
-        fill: { color: cardBgHex },
-        line: { color: accentHex, width: 1 },
+        fill: { color: currentCardBgHex },
+        line: { color: currentBorderHex, width: 1 },
       });
 
       slide.addText(
-        col1Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: textHex } })),
+        col1Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
         {
           x: 0.8,
           y: 1.7,
@@ -139,12 +156,12 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.5,
         w: 4.2,
         h: 3.4,
-        fill: { color: cardBgHex },
-        line: { color: accentHex, width: 1 },
+        fill: { color: currentCardBgHex },
+        line: { color: currentBorderHex, width: 1 },
       });
 
       slide.addText(
-        col2Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: textHex } })),
+        col2Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
         {
           x: 5.4,
           y: 1.7,
@@ -162,8 +179,8 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.2,
         w: 8.0,
         h: 3.2,
-        fill: { color: cardBgHex },
-        line: { color: primaryHex, width: 2 },
+        fill: { color: currentCardBgHex },
+        line: { color: currentPrimaryHex, width: 2 },
       });
 
       slide.addText("“", {
@@ -173,7 +190,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.6,
         fontSize: 44,
         fontFace: fontHeading,
-        color: accentHex,
+        color: currentAccentHex,
         bold: true,
       });
 
@@ -184,7 +201,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 1.2,
         fontSize: 22,
         fontFace: fontHeading,
-        color: textHex,
+        color: currentTextHex,
         bold: true,
         italic: true,
         align: "center",
@@ -198,7 +215,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           h: 0.8,
           fontSize: 14,
           fontFace: fontBody,
-          color: primaryHex,
+          color: currentPrimaryHex,
           align: "center",
         });
       }
@@ -222,12 +239,12 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.8,
         fontSize: 24,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
       });
 
       slide.addText(
-        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: textHex } })),
+        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
         {
           x: 5.2,
           y: 1.9,
@@ -247,12 +264,12 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.8,
         fontSize: 24,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
       });
 
       slide.addText(
-        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: textHex } })),
+        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
         {
           x: 0.6,
           y: 1.9,
@@ -280,7 +297,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.7,
         fontSize: 26,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
       });
 
@@ -301,8 +318,8 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           y: grid.y,
           w: grid.w,
           h: grid.h,
-          fill: { color: cardBgHex },
-          line: { color: accentHex, width: 1 },
+          fill: { color: currentCardBgHex },
+          line: { color: currentBorderHex, width: 1 },
         });
 
         // Split standard stat formats like "99% Growth rate"
@@ -322,7 +339,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           h: 0.6,
           fontSize: 24,
           fontFace: fontHeading,
-          color: accentHex,
+          color: currentAccentHex,
           bold: true,
         });
 
@@ -334,7 +351,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
             h: 0.7,
             fontSize: 11,
             fontFace: fontBody,
-            color: textHex,
+            color: currentTextHex,
           });
         }
       }
@@ -349,7 +366,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         h: 0.8,
         fontSize: 28,
         fontFace: fontHeading,
-        color: primaryHex,
+        color: currentPrimaryHex,
         bold: true,
       });
 
@@ -364,7 +381,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         });
 
         slide.addText(
-          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: textHex } })),
+          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
           {
             x: 0.6,
             y: 1.5,
@@ -376,7 +393,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
       } else {
         // Flat styled list
         slide.addText(
-          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 14, color: textHex } })),
+          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 14, color: currentTextHex } })),
           {
             x: 0.6,
             y: 1.6,

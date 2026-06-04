@@ -41,6 +41,13 @@ export interface Slide {
   imageCaption?: string;
   notes?: string;
   imageSearchQuery?: string;
+  badge?: string;
+  bgColor?: string;
+  textColor?: string;
+  accentColor?: string;
+  primaryColor?: string;
+  cardBgColor?: string;
+  borderColor?: string;
 }
 
 export interface Presentation {
