@@ -47,13 +47,23 @@
     page-break-after: always;
     break-after: page;
     position: relative;
-    width: 297mm;
-    height: 210mm;
+    width: 1920px !important;
+    height: 1080px !important;
+    min-width: 1920px !important;
+    min-height: 1080px !important;
+    max-width: 1920px !important;
+    max-height: 1080px !important;
     margin: 0 !important;
-    padding: 20mm !important;
+    padding: 0 !important;
     box-shadow: none !important;
     border: none !important;
+    box-sizing: border-box !important;
     background: var(--bg-color, white) !important;
     color: var(--text-color, black) !important;
+    overflow: hidden !important;
+  }
+  @page {
+    size: 1920px 1080px;
+    margin: 0;
   }
 }

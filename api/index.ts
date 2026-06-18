@@ -29,24 +29,39 @@ const ai = apiKey
 /// Reusable retry utility with exponential backoff for high-impact model endpoints
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  retries = 3,
-  delay = 1500,
+  retries = 4,
+  delay = 1000,
   factor = 2
 ): Promise<T> {
   try {
     return await fn();
   } catch (error: any) {
-    const errorMsg = (error?.message || error?.status || "").toString();
+    let errorString = "";
+    try {
+      errorString = [
+        error?.message,
+        error?.toString(),
+        JSON.stringify(error)
+      ].filter(Boolean).join(" ").toLowerCase();
+    } catch (_) {
+      errorString = (error?.message || "").toString().toLowerCase();
+    }
+
     const isRateLimitOrUnavailable =
-      errorMsg.includes("503") ||
-      errorMsg.includes("high demand") ||
-      errorMsg.includes("UNAVAILABLE") ||
-      errorMsg.includes("429") ||
-      errorMsg.includes("quota") ||
-      (error?.status === 503 || error?.status === 429);
+      errorString.includes("503") ||
+      errorString.includes("high demand") ||
+      errorString.includes("unavailable") ||
+      errorString.includes("429") ||
+      errorString.includes("quota") ||
+      errorString.includes("overburdened") ||
+      error?.status === 503 ||
+      error?.status === "UNAVAILABLE" ||
+      error?.status === 429 ||
+      error?.code === 503 ||
+      error?.statusCode === 503;
 
     if (retries > 0 && isRateLimitOrUnavailable) {
-      console.warn(`[GEMINI STATUS] Service bottleneck (503/429) detected. Retrying in ${delay}ms... Remaining: ${retries}`);
+      console.warn(`[GEMINI STATUS] Service bottleneck (503/429) detected. Retrying in ${delay}ms... Remaining: ${retries}. Error: ${errorString.slice(0, 150)}`);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return retryWithBackoff(fn, retries - 1, delay * factor, factor);
     }
@@ -83,8 +98,8 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
       DESIGN & PLOT ARCHITECTURE SYSTEM:
       1. PRESENTATION LENGTH:
          Adapt the length dynamically to give a thorough, comprehensive overview.
-         - Generate exactly 6 to 12 slides depending on the length and sophistication of the source document text.
-         - DO NOT artificially truncate the document. Maximize outline coverage while keeping each individual slide layout uncluttered.
+         - DO NOT limit or truncate how many pages/slides are generated. The total page count must be determined organically solely by the content in the uploaded document. If there is a lot of content, feel free to generate 15, 20, or even more slides to fully cover all details without any arbitrary limit or ceiling.
+         - Maximize outline coverage while keeping each individual slide layout uncluttered.
 
       2. THEME-CONSTRUCTED SLIDE-SPECIFIC COSMETIC VARIATION:
          To make the deck look bespoke, you must define slide-level color configurations and content badges.
@@ -125,14 +140,17 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
       4. CHOOSE EXPRESSIVE LAYOUTS:
          Tailor layouts specifically to fit the underlying slide copy:
          - "title-slide": Dedicated introduction.
-         - "two-column": Ideal for comparisons, opposing dimensions, or dual-category bullets.
-         - "headline-bullet": Elegant large subtitle statement with 2-4 pristine, brief bullet points.
+         - "two-column": Ideal for side-by-side structures or dual-category bullets.
+        - "comparison-table": CRITICAL layout choice for differences, versus comparisons (e.g. Legacy vs Slidesss), opposing viewpoints, pros/cons, or alternative features. Always select "comparison-table" when the content lists features, before vs after, or pros vs cons.
+         - "headline-bullet": Elegant large subtitle statement with pristine items.
          - "quote-slide": Perfect for a strong single takeaway quotation or bold highlighted realization.
          - "image-left" / "image-right": Bold asymmetrical splits highlighting Unsplash visuals.
          - "stats-bento": 4 metric boxes. Perfect ONLY if the bullets express clean growth percentages, finances, or dynamic numbers (the bullets should contain actual numbers!).
 
-      5. EXTREMELY PUNCHY WRITING:
-         Never copy raw wordy paragraphs. Rewrite all details into short, scannable, editorial-level bullet lines (under 8 words per bullet, 2 to 4 bullets max per slide). Keep it premium and crisp.
+      5. RESPECT TEXT FORMAT OF SOURCE DOCUMENT (CRITICAL):
+         - Do NOT reduce text into list items or bullet points unless it is explicitly indicated as a bullet point, numbered list, or dash item in the source document.
+         - If the source document contains a paragraph, explanation, or standard prose, keep it exactly as a regular paragraph/sentence block of text.
+         - Only prepend items in your 'content' array with a bullet symbol style (like '• ', '- ' or numbered indicators) if they were bulleted or numbered list items in the uploaded document.
 
       Here is the source document content to rewrite and design:
       ---------
@@ -161,7 +179,7 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
               },
               slides: {
                 type: Type.ARRAY,
-                description: "List of carefully structured presentation slides (6-12 slides max based on document complexity).",
+                description: "List of carefully structured presentation slides covering all content of the document. Let the quantity of slides be determined organically by the input document text complexity without any arbitrary maximum limit.",
                 items: {
                   type: Type.OBJECT,
                   properties: {
@@ -172,11 +190,11 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
                     content: {
                       type: Type.ARRAY,
                       items: { type: Type.STRING },
-                      description: "2-4 short, punchy scannable bullet items under 8 words each.",
+                      description: "An array of text elements. If the document has bullet points, keep them as list items (preserving prefixes like '• ' or leading bullet dashes). If the document has standard paragraphs/sentences instead of bullets, each paragraph or coherent block of standard text must be returned as a plain text string here without converting or reducing it into bullets.",
                     },
                     layout: {
                       type: Type.STRING,
-                      description: "The recommended visual layout: title-slide, two-column, headline-bullet, quote-slide, image-left, image-right, stats-bento.",
+                      description: "The recommended visual layout: title-slide, two-column, headline-bullet, quote-slide, image-left, image-right, stats-bento, comparison-table.",
                     },
                     notes: {
                       type: Type.STRING,
@@ -234,22 +252,37 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
     return res.json(payload);
   } catch (error: any) {
     console.error("Presentation Generation Error:", error);
-    const errorMsg = (error?.message || error?.status || "").toString();
-    if (
-      errorMsg.includes("503") ||
-      errorMsg.includes("high demand") ||
-      errorMsg.includes("UNAVAILABLE") ||
-      errorMsg.includes("429") ||
-      errorMsg.includes("quota") ||
+    let errorString = "";
+    try {
+      errorString = [
+        error?.message,
+        error?.toString(),
+        JSON.stringify(error)
+      ].filter(Boolean).join(" ").toLowerCase();
+    } catch (_) {
+      errorString = (error?.message || "").toString().toLowerCase();
+    }
+
+    const isRateLimitOrUnavailable =
+      errorString.includes("503") ||
+      errorString.includes("high demand") ||
+      errorString.includes("unavailable") ||
+      errorString.includes("429") ||
+      errorString.includes("quota") ||
+      errorString.includes("overburdened") ||
       error?.status === 503 ||
-      error?.status === 429
-    ) {
-      return res.status(503).json({
+      error?.status === "UNAVAILABLE" ||
+      error?.status === 429 ||
+      error?.code === 503 ||
+      error?.statusCode === 503;
+
+    if (isRateLimitOrUnavailable) {
+      return res.status(400).json({
         isTransient: true,
         error: "The Gemini AI service is currently experiencing high demand. Click 'Convert' to trigger an auto-retry, or click the friendly 'Preview Offline Demo' button to load a gorgeous pre-designed slide deck instantly!"
       });
     }
-    return res.status(500).json({ error: error?.message || "Internal generation failure." });
+    return res.status(400).json({ error: error?.message || "Internal generation failure." });
   }
 });
 
@@ -281,9 +314,9 @@ app.post("/api/gemini/suggest-design", async (req, res) => {
 
       Your output must:
       1. Propose an optimized layout that better represents this specific data.
-         Example: If the content is filled with metrics or stats, change layout to "stats-bento". If it's a quote, suggest "quote-slide".
+         Example: If the content is filled with metrics or stats, change layout to "stats-bento". If it's a quote, suggest "quote-slide". If it compares features, pros/cons, or legacy vs future, choose "comparison-table".
       2. Rewrite the title and content bullets to be even more professional, punchy, and design-forward.
-      3. Suggest a layout type ('title-slide' | 'two-column' | 'headline-bullet' | 'quote-slide' | 'image-left' | 'image-right' | 'stats-bento').
+      3. Suggest a layout type ('title-slide' | 'two-column' | 'headline-bullet' | 'quote-slide' | 'image-left' | 'image-right' | 'stats-bento' | 'comparison-table').
       4. Assign a custom, premium metadata "badge" appropriate for the content (e.g. "HIGHLIGHT", "METRIC", "SURVEY INDICATOR").
       5. Provide an elegant set of slide-specific background, text, accent, heading, card, and border HEX colors that perfectly fit the requested Theme Style "${themeId || "cosmic-slate"}" and create beautiful custom-brand contrast. If inverting the slide, make the contrast gorgeous.
     `;
@@ -326,22 +359,37 @@ app.post("/api/gemini/suggest-design", async (req, res) => {
     return res.json(JSON.parse(result.trim()));
   } catch (err: any) {
     console.error("AI Slide suggestion error:", err);
-    const errorMsg = (err?.message || err?.status || "").toString();
-    if (
-      errorMsg.includes("503") ||
-      errorMsg.includes("high demand") ||
-      errorMsg.includes("UNAVAILABLE") ||
-      errorMsg.includes("429") ||
-      errorMsg.includes("quota") ||
+    let errorString = "";
+    try {
+      errorString = [
+        err?.message,
+        err?.toString(),
+        JSON.stringify(err)
+      ].filter(Boolean).join(" ").toLowerCase();
+    } catch (_) {
+      errorString = (err?.message || "").toString().toLowerCase();
+    }
+
+    const isRateLimitOrUnavailable =
+      errorString.includes("503") ||
+      errorString.includes("high demand") ||
+      errorString.includes("unavailable") ||
+      errorString.includes("429") ||
+      errorString.includes("quota") ||
+      errorString.includes("overburdened") ||
       err?.status === 503 ||
-      err?.status === 429
-    ) {
-      return res.status(503).json({
+      err?.status === "UNAVAILABLE" ||
+      err?.status === 429 ||
+      err?.code === 503 ||
+      err?.statusCode === 503;
+
+    if (isRateLimitOrUnavailable) {
+      return res.status(400).json({
         isTransient: true,
         error: "The Gemini AI service is currently experiencing temporary high demand blocks. Please retry this action in a few moments."
       });
     }
-    return res.status(500).json({ error: err?.message || "AI suggestion failed." });
+    return res.status(400).json({ error: err?.message || "AI suggestion failed." });
   }
 });
 

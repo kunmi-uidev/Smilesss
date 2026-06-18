@@ -57,6 +57,8 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
     // Format slide title depending on whether it's a title slide
     const isTitle = slideData.layout === "title-slide";
 
+    const scaleFactor = slideData.fontSize === "small" ? 0.82 : slideData.fontSize === "large" ? 1.18 : 1.0;
+
     // Optional top corner badge
     if (slideData.badge) {
       slide.addText(slideData.badge.toUpperCase(), {
@@ -64,7 +66,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 0.15,
         w: 5.0,
         h: 0.3,
-        fontSize: 10,
+        fontSize: Math.round(10 * scaleFactor),
         fontFace: fontBody,
         color: currentAccentHex,
         bold: true,
@@ -78,7 +80,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.8,
         w: 8.0,
         h: 1.5,
-        fontSize: 36,
+        fontSize: Math.round(36 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
@@ -90,7 +92,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 3.2,
         w: 8.0,
         h: 1.0,
-        fontSize: 20,
+        fontSize: Math.round(20 * scaleFactor),
         fontFace: fontBody,
         color: currentTextHex,
         align: "center",
@@ -102,7 +104,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           y: 4.4,
           w: 8.0,
           h: 0.6,
-          fontSize: 12,
+          fontSize: Math.round(12 * scaleFactor),
           fontFace: fontBody,
           color: currentAccentHex,
           align: "center",
@@ -118,7 +120,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 0.5,
         w: 8.8,
         h: 0.8,
-        fontSize: 26,
+        fontSize: Math.round(26 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
@@ -139,7 +141,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
       });
 
       slide.addText(
-        col1Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
+        col1Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(13 * scaleFactor), color: currentTextHex } })),
         {
           x: 0.8,
           y: 1.7,
@@ -161,7 +163,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
       });
 
       slide.addText(
-        col2Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
+        col2Bullets.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(13 * scaleFactor), color: currentTextHex } })),
         {
           x: 5.4,
           y: 1.7,
@@ -188,7 +190,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.3,
         w: 1.0,
         h: 0.6,
-        fontSize: 44,
+        fontSize: Math.round(44 * scaleFactor),
         fontFace: fontHeading,
         color: currentAccentHex,
         bold: true,
@@ -199,7 +201,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.7,
         w: 7.0,
         h: 1.2,
-        fontSize: 22,
+        fontSize: Math.round(22 * scaleFactor),
         fontFace: fontHeading,
         color: currentTextHex,
         bold: true,
@@ -213,7 +215,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           y: 3.1,
           w: 7.0,
           h: 0.8,
-          fontSize: 14,
+          fontSize: Math.round(14 * scaleFactor),
           fontFace: fontBody,
           color: currentPrimaryHex,
           align: "center",
@@ -237,14 +239,14 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.0,
         w: 4.2,
         h: 0.8,
-        fontSize: 24,
+        fontSize: Math.round(24 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
       });
 
       slide.addText(
-        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
+        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(13 * scaleFactor), color: currentTextHex } })),
         {
           x: 5.2,
           y: 1.9,
@@ -262,14 +264,14 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 1.0,
         w: 4.2,
         h: 0.8,
-        fontSize: 24,
+        fontSize: Math.round(24 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
       });
 
       slide.addText(
-        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
+        slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(13 * scaleFactor), color: currentTextHex } })),
         {
           x: 0.6,
           y: 1.9,
@@ -295,7 +297,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 0.4,
         w: 8.8,
         h: 0.7,
-        fontSize: 26,
+        fontSize: Math.round(26 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
@@ -337,7 +339,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
           y: grid.y + 0.2,
           w: grid.w - 0.4,
           h: 0.6,
-          fontSize: 24,
+          fontSize: Math.round(24 * scaleFactor),
           fontFace: fontHeading,
           color: currentAccentHex,
           bold: true,
@@ -349,7 +351,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
             y: grid.y + 0.8,
             w: grid.w - 0.4,
             h: 0.7,
-            fontSize: 11,
+            fontSize: Math.round(11 * scaleFactor),
             fontFace: fontBody,
             color: currentTextHex,
           });
@@ -364,7 +366,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         y: 0.5,
         w: 8.8,
         h: 0.8,
-        fontSize: 28,
+        fontSize: Math.round(28 * scaleFactor),
         fontFace: fontHeading,
         color: currentPrimaryHex,
         bold: true,
@@ -381,7 +383,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
         });
 
         slide.addText(
-          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 13, color: currentTextHex } })),
+          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(13 * scaleFactor), color: currentTextHex } })),
           {
             x: 0.6,
             y: 1.5,
@@ -393,7 +395,7 @@ export async function exportToPPTX(presentation: Presentation): Promise<void> {
       } else {
         // Flat styled list
         slide.addText(
-          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: 14, color: currentTextHex } })),
+          slideData.content.map(bullet => ({ text: "• " + bullet + "\n\n", options: { fontSize: Math.round(14 * scaleFactor), color: currentTextHex } })),
           {
             x: 0.6,
             y: 1.6,

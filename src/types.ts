@@ -30,7 +30,8 @@ export type SlideLayout =
   | "image-left"
   | "image-right"
   | "minimal-split"
-  | "stats-bento";
+  | "stats-bento"
+  | "comparison-table";
 
 export interface Slide {
   id: string;
@@ -48,6 +49,7 @@ export interface Slide {
   primaryColor?: string;
   cardBgColor?: string;
   borderColor?: string;
+  fontSize?: "small" | "medium" | "large";
 }
 
 export interface Presentation {

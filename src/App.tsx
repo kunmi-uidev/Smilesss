@@ -8,7 +8,7 @@ import mammoth from "mammoth";
 import {
   Upload, Sparkles, Wand2, Download, RefreshCw, Plus, Trash2, ArrowUp, ArrowDown,
   Image as ImageIcon, Layout, Palette, Search, FileText, Check, HelpCircle, ChevronRight,
-  Monitor, Play, Printer, X, Sliders, ExternalLink
+  Monitor, Play, Printer, X, Sliders, ExternalLink, WifiOff, AlertCircle
 } from "lucide-react";
 import { ThemeId, ColorPalette, SlideLayout, Slide, Presentation } from "./types";
 import { THEME_PRESETS, CURATED_UNSPLASH_IMAGES, getKeywordImage, normalizeHex, hexToRgbA } from "./lib/themePresets";
@@ -45,8 +45,9 @@ Comparison reveals severe gaps in old-world tech:
 - PHASE III (AUGUST): Open Unsplash visual search databases to users.
 - PHASE IV (SEPTEMBER): General market announcement.`;
 
-// Diagnostic Helper to structure raw error string feeds into high-impact user insights
+// Diagnostic Helper to structure raw error inputs into clean, non-technical category templates
 interface ParsedError {
+  type: "network" | "technical" | "input";
   title: string;
   explanation: string;
   cause: string;
@@ -56,48 +57,70 @@ interface ParsedError {
 function getDetailedError(message: string | null): ParsedError {
   if (!message) {
     return {
-      title: "Operation Failed Unexpectedly",
-      explanation: "No raw system error records were piped.",
-      cause: "This is usually caused by an abort sequence or a timed-out silent transition.",
-      cta: "Try loading our system sample text first using 'Load Text' button to verify state."
+      type: "technical",
+      title: "Technical System Error",
+      explanation: "An unexpected internal error interrupted the process of designing your slide deck.",
+      cause: "Internal compiler timeout.",
+      cta: "Please try again later. If this persists, feel free to contact system support."
     };
   }
 
-  let title = "Failed to Process Action";
-  let explanation = message;
-  let cause = "The background service or host interface reported an unexpected interrupt.";
-  let cta = "Please try again. If the issue keeps happening, load our sample presentation text or copy/paste smaller paragraphs.";
-
   const lower = message.toLowerCase();
 
-  if (lower.includes("invalid json") || lower.includes("unexpected token") || lower.includes("position") || lower.includes("pars")) {
-    title = "Invalid Server JSON Response";
-    explanation = "The presentation parsing logic received a non-JSON data stream instead of valid slide decks configuration. Usually, this means the server returned an HTML error or message page.";
-    cause = "This typically indicates that the Cloud container or development server returned a temporary service notice or HTML routing message instead of the raw data. It can occur on startup cold starts, routing redirects, or database sync drops.";
-    cta = "Please wait a few seconds and click the 'Generate PDF/PPTX' action again. If you continue to see this, write or paste simpler formatting guidelines in the editor box.";
-  } else if (lower.includes("docx") || lower.includes("corrupt") || lower.includes("mammoth")) {
-    title = "Word Document Reader Failure";
-    explanation = "The Mammoth file reader was unable to parse the selected file into clear editable Markdown/HTML content.";
-    cause = "This happens when the uploaded file is encrypted with an owner password, is structurally corrupted, or is stored in a legacy format such as real-old .doc, .pages, or rich text RTF style sheet drafts.";
-    cta = "Please ensure the file is a modern Word archive ending with '.docx'. If not, simply open the document in your normal editor, copy the core text, and paste it directly into our 'Manual Outline Input editor' zone below.";
-  } else if (lower.includes("empty") || lower.includes("please select a word") || lower.includes("outline")) {
-    title = "Empty Source Input Detected";
-    explanation = "There is no input text available to parse and reconstruct into graphical slides.";
-    cause = "The manual editor field is blank, or the Word document processing finished with no text characters.";
-    cta = "Type some presentation headlines in our manual text editor, or click the 'Load Text' preset helper button to instantly populate a beautiful corporate slide blueprint.";
-  } else if (lower.includes("gemini") || lower.includes("refused") || lower.includes("api") || lower.includes("quota") || lower.includes("key")) {
-    title = "AI Reasoner Engine Unreachable";
-    explanation = "The custom generative AI backend refused our prompt proposal or failed to formulate layouts.";
-    cause = "This typically happens if the GEMINI_API_KEY is either missing in system settings, has expired, or the service quota rate limits were temporarily saturated.";
-    cta = "Verify that the server has a valid GEMINI_API_KEY set in its environment/settings. You can also recheck your active internet configuration and click 'Convert' again to re-trigger.";
-  } else if (lower.includes("pptx") || lower.includes("powerpoint") || lower.includes("export") || lower.includes("printer") || lower.includes("print")) {
-    title = "Slide Generation Export Obstacle";
-    explanation = "The client-side PPTX/PDF rendering engine encountered a layout bottleneck or page setup issue.";
-    cause = "This can happen if high-res remote images fail to download dynamically, or memory constraints on active browser tabs are reached.";
-    cta = "Ensure you are using a modern browser such as Chrome or Edge. Alternatively, try reloading the web page, choosing a different slide background color, or selecting fewer text bullets.";
+  // 1. Check for empty template or prompt issue (input Validation notice)
+  if (
+    lower.includes("empty") || 
+    lower.includes("please select a word") || 
+    lower.includes("outline") ||
+    lower.includes("no document text")
+  ) {
+    return {
+      type: "input",
+      title: "No Presentation Outline Found",
+      explanation: "We couldn't find any presentation headlines or text content in the Manual Editor or the uploaded file.",
+      cause: "The source text is empty or missing details.",
+      cta: "Type out some high-level key points in the editor box, or load our predesigned company business template instantly."
+    };
   }
 
-  return { title, explanation, cause, cta };
+  // 2. Check for network connection, server load, and service rate/quota blocks (Network Error)
+  const isNetwork =
+    lower.includes("fetch") ||
+    lower.includes("network") ||
+    lower.includes("connect") ||
+    lower.includes("timeout") ||
+    lower.includes("503") ||
+    lower.includes("unavailable") ||
+    lower.includes("429") ||
+    lower.includes("quota") ||
+    lower.includes("rate limit") ||
+    lower.includes("overburdened") ||
+    lower.includes("unreachable") ||
+    lower.includes("key is missing") ||
+    lower.includes("html template") ||
+    lower.includes("doctype") ||
+    lower.includes("unauthorized") ||
+    lower.includes("offline") ||
+    lower.includes("bottleneck");
+
+  if (isNetwork) {
+    return {
+      type: "network",
+      title: "Network Connection Issue",
+      explanation: "Our system is experiencing a temporary network bottleneck or transient traffic overload. No worries, this is usually temporary!",
+      cause: "Temporary AI model/network bottleneck.",
+      cta: "Please verify your active internet connection or click 'Try Again' in a few seconds to retry instantly."
+    };
+  }
+
+  // 3. Otherwise treat as a stable major internal Technical Error (Technical issue etc.)
+  return {
+    type: "technical",
+    title: "Technical Error Details",
+    explanation: "An unexpected technical error occurred while rendering or formulating your presentation slides.",
+    cause: "Internal layout compiler exception.",
+    cta: "Click below to contact our administrator or bypass with an offline demo presentation layout."
+  };
 }
 
 function TypewriterText() {
@@ -142,6 +165,47 @@ function TypewriterText() {
       )}
     </span>
   );
+}
+
+function getContrastColor(bgColorHex: string): { text: string; mtext: string; card: string; border: string; contrastRatio: number; rating: string } {
+  try {
+    const hex = normalizeHex(bgColorHex, "#0B0F19").replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16) || 0;
+    const g = parseInt(hex.substring(2, 4), 16) || 0;
+    const b = parseInt(hex.substring(4, 6), 16) || 0;
+    
+    const a = [r, g, b].map((v) => {
+      v /= 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    const luminance = 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+
+    const ratioWithWhite = (1.0 + 0.05) / (luminance + 0.05);
+    const ratioWithBlack = (luminance + 0.05) / 0.05;
+
+    const useDark = luminance > 0.45;
+    const contrastRatio = useDark ? ratioWithBlack : ratioWithWhite;
+    
+    const rating = contrastRatio >= 7.0 ? "AAA (Excellent)" : contrastRatio >= 4.5 ? "AA (Pass)" : "Low Contrast (Warning)";
+
+    return {
+      text: useDark ? "#0F172A" : "#F8FAFC",
+      mtext: useDark ? "#475569" : "#94A3B8",
+      card: useDark ? "rgba(15, 23, 42, 0.05)" : "rgba(255, 255, 255, 0.07)",
+      border: useDark ? "rgba(15, 23, 42, 0.12)" : "rgba(255, 255, 255, 0.15)",
+      contrastRatio,
+      rating
+    };
+  } catch (err) {
+    return {
+      text: "#F8FAFC",
+      mtext: "#94A3B8",
+      card: "rgba(255, 255, 255, 0.07)",
+      border: "rgba(255, 255, 255, 0.15)",
+      contrastRatio: 21,
+      rating: "AAA"
+    };
+  }
 }
 
 export default function App() {
@@ -315,7 +379,7 @@ export default function App() {
     }));
 
     const demoPresentation: Presentation = {
-      title: "Excelsior Q3 Strategy Deck",
+      title: docName ? docName.replace(/\.[^/.]+$/, "").replace(/_/g, " ") : "Sample Excelsior Strategy Report",
       themeId: selectedThemeId,
       brandColor: brandColor,
       palette: THEME_PRESETS[selectedThemeId].defaultPalette(brandColor),
@@ -372,6 +436,12 @@ export default function App() {
         responseText = "";
       }
 
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("application/json")) {
+        const cleanText = responseText.replace(/<[^>]*>/g, '').trim();
+        throw new Error(`The server returned an HTML template instead of data. This typically indicates a network bottleneck or that your Gemini API key is missing or expired. Server message: ${cleanText.slice(0, 150) || "None"}`);
+      }
+
       if (!res.ok) {
         let errorMsg = "Generation endpoint refused to formulate slide layouts.";
         try {
@@ -401,7 +471,7 @@ export default function App() {
       const activeThemeId = (deck.themeId as ThemeId) || selectedThemeId;
 
       const loadedPresentation: Presentation = {
-        title: deck.title || "Untitled Presentation",
+        title: deck.title || (docName ? docName.replace(/\.[^/.]+$/, "").replace(/_/g, " ") : "Untitled Presentation"),
         themeId: activeThemeId,
         brandColor: brandColor,
         palette: THEME_PRESETS[activeThemeId].defaultPalette(brandColor),
@@ -451,6 +521,12 @@ export default function App() {
   const slideCardBg = activeSlide?.cardBgColor || presentation?.palette.cardBg || "#111827";
   const slideBorder = activeSlide?.borderColor || presentation?.palette.border || "#1F2937";
 
+  const slideScale = activeSlide?.fontSize === "small" ? 0.82 : activeSlide?.fontSize === "large" ? 1.18 : 1.0;
+
+  const getFontSizeStyle = (baseSizeRem: number, scale: number = slideScale) => {
+    return `${baseSizeRem * scale}rem`;
+  };
+
   const updateActiveSlide = (fields: Partial<Slide>) => {
     if (!presentation || !activeSlide) return;
     const updatedSlides = [...presentation.slides];
@@ -461,6 +537,17 @@ export default function App() {
     setPresentation({
       ...presentation,
       slides: updatedSlides
+    });
+  };
+
+  const handleSlideBgChange = (newColor: string) => {
+    const norm = normalizeHex(newColor, "#0B0F19");
+    const acc = getContrastColor(norm);
+    updateActiveSlide({
+      bgColor: norm,
+      textColor: acc.text,
+      cardBgColor: acc.card,
+      borderColor: acc.border
     });
   };
 
@@ -585,6 +672,12 @@ export default function App() {
         responseText = await res.text();
       } catch (e) {
         responseText = "";
+      }
+
+      const contentType = res.headers.get("Content-Type") || "";
+      if (!contentType.includes("application/json")) {
+        const cleanText = responseText.replace(/<[^>]*>/g, '').trim();
+        throw new Error(`The server returned an HTML template instead of data. This typically indicates a network bottleneck or that your Gemini API key is missing or expired. Server message: ${cleanText.slice(0, 150) || "None"}`);
       }
 
       if (!res.ok) {
@@ -712,21 +805,21 @@ export default function App() {
                 print-color-adjust: exact !important;
               }
               .print-page {
-                width: 297mm;
-                height: 210mm;
-                max-width: 100%;
-                max-height: 100%;
-                page-break-after: always;
-                break-after: page;
-                box-sizing: border-box;
-                position: relative;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                overflow: hidden;
+                width: 1920px !important;
+                height: 1080px !important;
+                min-width: 1920px !important;
+                min-height: 1080px !important;
+                max-width: 1920px !important;
+                max-height: 1080px !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+                overflow: hidden !important;
+                display: block !important;
               }
               @page {
-                size: A4 landscape;
+                size: 1920px 1080px;
                 margin: 0;
               }
               @media print {
@@ -738,8 +831,8 @@ export default function App() {
                   margin: 0 !important;
                   border: none !important;
                   box-shadow: none !important;
-                  width: 297mm;
-                  height: 210mm;
+                  width: 1920px !important;
+                  height: 1080px !important;
                 }
               }
             </style>
@@ -897,84 +990,103 @@ export default function App() {
         const errDetails = getDetailedError(errorMessage);
         return (
           <div id="modal-error-diagnostics" className="no-print fixed inset-0 z-50 bg-neutral-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl shadow-red-950/10 animate-in zoom-in-95 duration-200 text-left">
+            <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl shadow-red-950/10 animate-in zoom-in-95 duration-200 text-left">
               
-              {/* Header */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center space-x-3 text-red-400">
-                  <div className="p-2 sm:p-2.5 bg-red-500/10 border border-red-500/25 rounded-2xl text-red-400 shrink-0">
-                    <X className="w-5 h-5 font-bold animate-pulse" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-red-500 font-extrabold block mb-0.5">System Diagnostics</span>
-                    <h3 className="font-heading font-black text-base sm:text-lg text-white leading-tight">
-                      {errDetails.title}
-                    </h3>
-                  </div>
+              {/* Simplified Visual Icon and Header */}
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="p-3 bg-neutral-800/60 border border-neutral-750 rounded-full shrink-0">
+                  {errDetails.type === "network" ? (
+                    <WifiOff className="w-10 h-10 text-amber-500 animate-pulse" />
+                  ) : errDetails.type === "input" ? (
+                    <FileText className="w-10 h-10 text-indigo-400" />
+                  ) : (
+                    <AlertCircle className="w-10 h-10 text-red-500 animate-bounce" />
+                  )}
                 </div>
-                <button
-                  id="btn-close-error-modal-top"
-                  onClick={() => setErrorMessage(null)}
-                  className="text-neutral-500 hover:text-white transition-all text-sm p-1.5 hover:bg-neutral-800 rounded-lg cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Body Content */}
-              <div className="space-y-4 text-xs sm:text-[13px] leading-relaxed">
-                {/* 1. What directly happened */}
-                <div className="space-y-1.5">
-                  <span className="text-neutral-500 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider block font-bold">What Happened:</span>
-                  <div className="bg-neutral-950 border border-neutral-850 p-4 rounded-2xl font-mono text-red-300 text-xs leading-relaxed select-text max-h-32 overflow-y-auto custom-scrollbar break-all">
-                    {errDetails.explanation}
-                  </div>
-                </div>
-
-                {/* 2. Conceptual context of why this might happen */}
-                <div className="space-y-1.5">
-                  <span className="text-neutral-500 font-mono text-[9px] sm:text-[10px] uppercase tracking-wider block font-bold">Why it happened:</span>
-                  <p className="text-neutral-400 px-1 leading-relaxed text-xs">
-                    {errDetails.cause}
-                  </p>
-                </div>
-
-                {/* 3. Action advice - what to do next */}
-                <div className="bg-indigo-950/20 border border-indigo-500/20 p-4 sm:p-5 rounded-2xl space-y-2">
-                  <div className="flex items-center space-x-1.5 text-indigo-400 font-bold">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="text-[10px] font-mono uppercase tracking-wider">What to do next:</span>
-                  </div>
-                  <p className="text-neutral-200 text-xs leading-relaxed font-medium">
-                    {errDetails.cta}
-                  </p>
+                
+                <div className="space-y-1.5 w-full">
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block font-extrabold">
+                    {errDetails.type === "network" ? "Connection Notice" : errDetails.type === "input" ? "Input Required" : "System Error"}
+                  </span>
+                  <h3 className="font-heading font-black text-lg sm:text-xl text-white leading-tight">
+                    {errDetails.title}
+                  </h3>
                 </div>
               </div>
 
-              {/* Footer CTA Button Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-neutral-800/60">
-                <button
-                  id="btn-error-close-primary"
-                  onClick={() => setErrorMessage(null)}
-                  className="w-full sm:w-auto px-4.5 py-2.5 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                >
-                  Close Window
-                </button>
-                <button
-                  id="btn-error-retry-action"
-                  onClick={() => {
-                    setErrorMessage(null);
-                    if (!rawText.trim()) {
+              {/* Simplified, friendly explanation of the error (no technical jargon) */}
+              <div className="bg-neutral-950/60 border border-neutral-850 p-5 rounded-2xl text-center space-y-3">
+                <p className="text-neutral-300 text-xs sm:text-sm leading-relaxed">
+                  {errDetails.explanation}
+                </p>
+                <p className="text-neutral-500 text-[11px] font-medium leading-relaxed italic">
+                  Suggested Action: {errDetails.cta}
+                </p>
+              </div>
+
+              {/* Footer Controls based on Error Type */}
+              <div className="flex flex-col gap-2.5 pt-2 border-t border-neutral-800/65">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    id="btn-error-close-primary"
+                    onClick={() => setErrorMessage(null)}
+                    className="px-4 py-2.5 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer text-center"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    id="btn-error-bypass-demo"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      handleLoadDemoPresentation();
+                    }}
+                    className="px-4 py-2.5 bg-neutral-800/80 hover:bg-neutral-750 text-indigo-400 hover:text-indigo-300 border border-neutral-750 text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center space-x-1"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>Load Demo Deck</span>
+                  </button>
+                </div>
+
+                {/* Main Action buttons customized per type */}
+                {errDetails.type === "network" ? (
+                  <button
+                    id="btn-error-retry-action"
+                    onClick={() => {
+                      setErrorMessage(null);
+                      if (!rawText.trim()) {
+                        handleLoadSample();
+                      } else {
+                        handleGeneratePresentation();
+                      }
+                    }}
+                    className="w-full px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-amber-500/10 flex items-center justify-center space-x-2 transition cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Try Again Now</span>
+                  </button>
+                ) : errDetails.type === "technical" ? (
+                  <a
+                    id="btn-error-contact-admin"
+                    href={`mailto:bukunmiogunneye0@gmail.com?subject=AI%20Presentation%20System%20-%20Technical%20Error&body=Hello%20Support%20Team%2C%0A%0AI%20encountered%20an%20unexpected%20technical%20system%20error%20while%20attempting%20to%20build%20my%20presentation.%0A%0AError%20Details%3A%20${encodeURIComponent(errorMessage || "Internal layout issue.")}%0A%0APlease%20assist%20with%20resolving%20this%20blocker.`}
+                    className="w-full px-5 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center space-x-2 transition cursor-pointer text-center"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Contact Administrator</span>
+                  </a>
+                ) : (
+                  <button
+                    id="btn-error-load-outline"
+                    onClick={() => {
+                      setErrorMessage(null);
                       handleLoadSample();
-                    } else {
-                      handleGeneratePresentation();
-                    }
-                  }}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center space-x-1.5 transition cursor-pointer"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Execute Auto-Retry Process</span>
-                </button>
+                    }}
+                    className="w-full px-5 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/10 flex items-center justify-center space-x-2 transition cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Use Sample Outlines</span>
+                  </button>
+                )}
               </div>
 
             </div>
@@ -1291,11 +1403,6 @@ export default function App() {
                       } as React.CSSProperties}
                     >
                       
-                      {/* ASYMMETRICAL DECORATIVE GRID LINES FOR BRUTALIST & SWISS DESIGN */}
-                      {presentation?.themeId === "brutalist-mono" && (
-                        <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: slideText, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
-                      )}
-
                       {/* DECORATIVE LIGHT SHAPES FOR AVANTGARDE */}
                       {presentation?.themeId === "creative-avantgarde" && (
                         <div className="absolute -left-12 -top-12 w-48 h-48 bg-pink-300/10 rounded-full blur-2xl pointer-events-none" />
@@ -1317,7 +1424,7 @@ export default function App() {
                             className="text-[9px] font-mono tracking-widest font-black uppercase"
                             style={{ color: slideAccent }}
                           >
-                            Excelsior Q3 Strategy Deck
+                            {presentation?.title || docName || "Untitled Presentation"}
                           </span>
                           <span className="text-[10px] font-mono text-neutral-500">
                             Slide {activeSlideIndex + 1} of {presentation?.slides.length || 0}
@@ -1345,24 +1452,26 @@ export default function App() {
                                 </div>
                               )}
                               <h3
-                                className={`text-4xl lg:text-5xl tracking-tight leading-tight ${activePresetTheme.fontHeading}`}
-                                style={{ color: slidePrimary }}
+                                className={`tracking-tight leading-tight ${activePresetTheme.fontHeading}`}
+                                style={{ color: slidePrimary, fontSize: getFontSizeStyle(2.7) }}
                               >
                                 {presentation?.title || "BUSINESS PRESENTATION"}
                               </h3>
-                              <p
-                                className="text-lg font-mono font-medium max-w-2xl mx-auto"
-                                style={{ color: slideText }}
-                              >
-                                {activeSlide.title}
-                              </p>
+                              <div className="block mt-4">
+                                <p
+                                  className="font-mono font-medium opacity-85"
+                                  style={{ color: slideText, fontSize: getFontSizeStyle(1.1) }}
+                                >
+                                  {activeSlide.title}
+                                </p>
+                              </div>
                               {activeSlide.content.length > 0 && (
                                 <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
                                   {activeSlide.content.map((point, idx) => (
                                     <span
                                       key={idx}
-                                      className="text-xs px-3 py-1 bg-neutral-500/5 border border-neutral-750/30 rounded-full font-medium"
-                                      style={{ color: slideAccent }}
+                                      className="bg-neutral-500/5 border border-neutral-750/30 rounded-full font-medium"
+                                      style={{ color: slideAccent, fontSize: getFontSizeStyle(0.75) }}
                                     >
                                       {point}
                                     </span>
@@ -1390,7 +1499,7 @@ export default function App() {
                                     </span>
                                   </div>
                                 )}
-                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.5) }}>
                                   {activeSlide.title}
                                 </h3>
                               </div>
@@ -1398,23 +1507,41 @@ export default function App() {
                                 <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: slideCardBg, border: `1px solid ${slideBorder}` }}>
                                   <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slideAccent }} />
                                   <ul className="space-y-2.5">
-                                    {activeSlide.content.slice(0, Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => (
-                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
-                                        <span>{bullet}</span>
-                                      </li>
-                                    ))}
+                                    {activeSlide.content.slice(0, Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => {
+                                      const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                      let displayText = bullet;
+                                      if (isListItem) {
+                                        displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                      }
+                                      return (
+                                        <li key={idx} className={`flex items-start ${isListItem ? "space-x-2" : ""} ${activePresetTheme.fontBody}`} style={{ color: slideText, fontSize: getFontSizeStyle(0.85) }}>
+                                          {isListItem && (
+                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
+                                          )}
+                                          <span>{displayText}</span>
+                                        </li>
+                                      );
+                                    })}
                                   </ul>
                                 </div>
                                 <div className="p-4 rounded-xl space-y-3" style={{ backgroundColor: slideCardBg, border: `1px solid ${slideBorder}` }}>
                                   <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slidePrimary }} />
                                   <ul className="space-y-2.5">
-                                    {activeSlide.content.slice(Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => (
-                                      <li key={idx} className={`flex items-start space-x-2 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                        <span>{bullet}</span>
-                                      </li>
-                                    ))}
+                                    {activeSlide.content.slice(Math.ceil(activeSlide.content.length / 2)).map((bullet, idx) => {
+                                      const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                      let displayText = bullet;
+                                      if (isListItem) {
+                                        displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                      }
+                                      return (
+                                        <li key={idx} className={`flex items-start ${isListItem ? "space-x-2" : ""} ${activePresetTheme.fontBody}`} style={{ color: slideText, fontSize: getFontSizeStyle(0.85) }}>
+                                          {isListItem && (
+                                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                          )}
+                                          <span>{displayText}</span>
+                                        </li>
+                                      );
+                                    })}
                                   </ul>
                                 </div>
                               </div>
@@ -1440,15 +1567,17 @@ export default function App() {
                               )}
                               <span className="text-5xl leading-none font-black opacity-30 block" style={{ color: slideAccent }}>“</span>
                               <h4
-                                className="text-xl lg:text-2xl font-black italic tracking-wide"
-                                style={{ color: slideText }}
+                                className="font-black italic tracking-wide text-center"
+                                style={{ color: slideText, fontSize: getFontSizeStyle(1.4) }}
                               >
                                 {activeSlide.title}
                               </h4>
                               {activeSlide.content.length > 0 && (
-                                <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: slidePrimary }}>
-                                  - {activeSlide.content.join(" & ")}
-                                </p>
+                                <div className="block pt-2">
+                                  <p className="uppercase tracking-widest font-mono font-bold text-center opacity-85" style={{ color: slidePrimary, fontSize: getFontSizeStyle(0.75) }}>
+                                    - {activeSlide.content.join(" & ")}
+                                  </p>
+                                </div>
                               )}
                             </div>
 
@@ -1487,17 +1616,26 @@ export default function App() {
                                       </span>
                                     </div>
                                   )}
-                                  <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                  <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.5) }}>
                                     {activeSlide.title}
                                   </h3>
                                 </div>
                                 <ul className="space-y-3">
-                                  {activeSlide.content.map((bullet, idx) => (
-                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
-                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                      <span>{bullet}</span>
-                                    </li>
-                                  ))}
+                                  {activeSlide.content.map((bullet, idx) => {
+                                    const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                    let displayText = bullet;
+                                    if (isListItem) {
+                                      displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                    }
+                                    return (
+                                      <li key={idx} className={`flex items-start ${isListItem ? "space-x-2.5" : ""} ${activePresetTheme.fontBody}`} style={{ color: slideText, fontSize: getFontSizeStyle(0.85) }}>
+                                        {isListItem && (
+                                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                        )}
+                                        <span>{displayText}</span>
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                             </div>
@@ -1522,17 +1660,26 @@ export default function App() {
                                       </span>
                                     </div>
                                   )}
-                                  <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                  <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.5) }}>
                                     {activeSlide.title}
                                   </h3>
                                 </div>
                                 <ul className="space-y-3">
-                                  {activeSlide.content.map((bullet, idx) => (
-                                    <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
-                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                      <span>{bullet}</span>
-                                    </li>
-                                  ))}
+                                  {activeSlide.content.map((bullet, idx) => {
+                                    const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                    let displayText = bullet;
+                                    if (isListItem) {
+                                      displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                    }
+                                    return (
+                                      <li key={idx} className={`flex items-start ${isListItem ? "space-x-2.5" : ""} ${activePresetTheme.fontBody}`} style={{ color: slideText, fontSize: getFontSizeStyle(0.85) }}>
+                                        {isListItem && (
+                                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                        )}
+                                        <span>{displayText}</span>
+                                      </li>
+                                    );
+                                  })}
                                 </ul>
                               </div>
                               <div className="relative rounded-xl overflow-hidden shadow-md h-full min-h-48">
@@ -1566,7 +1713,7 @@ export default function App() {
                                     </span>
                                   </div>
                                 )}
-                                <h3 className={`text-xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.25) }}>
                                   {activeSlide.title}
                                 </h3>
                               </div>
@@ -1581,24 +1728,218 @@ export default function App() {
                                     metricLabel = textVal.substring(spaceIdx + 1);
                                   }
 
+                                  const numericStr = metricNum.replace(/[^0-9.]/g, '');
+                                  const numericVal = numericStr ? parseFloat(numericStr) : null;
+                                  const isPercent = metricNum.includes("%");
+
                                   return (
                                     <div
                                       key={val}
-                                      className="p-4 rounded-xl space-y-1 transition-all"
+                                      className="p-4 rounded-xl space-y-2 flex flex-col justify-between transition-all"
                                       style={{
                                         backgroundColor: slideCardBg,
                                         border: `1px solid ${slideBorder}`
                                       }}
                                     >
-                                      <span className="text-2xl font-heading font-black block" style={{ color: slideAccent }}>
-                                        {metricNum}
-                                      </span>
-                                      <span className="text-[10px] font-mono font-medium block leading-tight text-neutral-400 uppercase">
-                                        {metricLabel || "Strategic target metrics"}
-                                      </span>
+                                      <div className="space-y-0.5">
+                                        <span className="font-heading font-black block" style={{ color: slideAccent, fontSize: getFontSizeStyle(1.3) }}>
+                                          {metricNum}
+                                        </span>
+                                        <span className="font-mono font-medium block leading-tight text-neutral-400 uppercase tracking-wide" style={{ fontSize: getFontSizeStyle(0.55) }}>
+                                          {metricLabel || "Strategic target metrics"}
+                                        </span>
+                                      </div>
+
+                                      {/* BAR CHART OR DIAGRAM WIDGET AS REQUESTED */}
+                                      <div className="w-full pt-1">
+                                        {isPercent && numericVal !== null ? (
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center text-[7px] font-mono opacity-50">
+                                              <span>Progress Ratio</span>
+                                              <span>{Math.min(100, Math.round(numericVal))}%</span>
+                                            </div>
+                                            <div className="w-full h-1 bg-neutral-900/60 rounded-full overflow-hidden p-[0.5px] border border-neutral-800/15">
+                                              <div 
+                                                className="h-full rounded-full transition-all duration-1000"
+                                                style={{
+                                                  width: `${Math.min(100, Math.max(8, numericVal))}%`,
+                                                  background: `linear-gradient(to right, ${slidePrimary}, ${slideAccent})`,
+                                                  boxShadow: `0 0 4px ${slideAccent}40`
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                        ) : numericVal !== null ? (
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center text-[7px] font-mono opacity-50">
+                                              <span>Comparative Bar Graph</span>
+                                              <span>Val: {metricNum}</span>
+                                            </div>
+                                            <div className="h-4 flex items-end justify-between gap-[1.5px] w-full">
+                                              {[20, 35, 50, 30, 60, 75, 45, 65, 85, 100].map((hValue, barIdx) => {
+                                                const scaleFactor = Math.min(1.2, Math.max(0.3, numericVal / 100));
+                                                const calcHeight = Math.min(100, Math.max(15, hValue * scaleFactor));
+                                                return (
+                                                  <div 
+                                                    key={barIdx}
+                                                    className="w-full rounded-t-[1px] transition-all"
+                                                    style={{
+                                                      height: `${calcHeight}%`,
+                                                      backgroundColor: barIdx >= 8 ? slideAccent : `${slidePrimary}25`,
+                                                    }}
+                                                  />
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-1">
+                                            <div className="flex justify-between items-center text-[7px] font-mono opacity-50">
+                                              <span>Trajectory Trend</span>
+                                              <span>Active Metrics</span>
+                                            </div>
+                                            <div className="h-4 w-full flex items-center justify-center">
+                                              <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
+                                                <path 
+                                                  d="M 0 15 Q 15 5, 30 14 T 60 4 T 90 12 L 100 8" 
+                                                  fill="none" 
+                                                  stroke={slideAccent} 
+                                                  strokeWidth="1.5" 
+                                                  strokeLinecap="round"
+                                                  className="opacity-90"
+                                                />
+                                                <path 
+                                                  d="M 0 15 Q 15 5, 30 14 T 60 4 T 90 12 L 100 8 L 100 20 L 0 20 Z" 
+                                                  fill={`url(#ambient-grad-${val})`}
+                                                  className="opacity-25"
+                                                />
+                                                <defs>
+                                                  <linearGradient id={`ambient-grad-${val}`} x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="0%" stopColor={slideAccent} />
+                                                    <stop offset="100%" stopColor="transparent" />
+                                                  </linearGradient>
+                                                </defs>
+                                              </svg>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   );
                                 })}
+                              </div>
+                            </div>
+
+                          ) : activeSlide.layout === "comparison-table" ? (
+                            
+                            /* LAYOUT 8: COMPARISON TABLE */
+                            <div className="space-y-4">
+                              <div>
+                                {activeSlide.badge && (
+                                  <div className="mb-2">
+                                    <span
+                                      className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                      style={{
+                                        backgroundColor: `${slideAccent}1d`,
+                                        color: slideAccent,
+                                        borderColor: `${slideAccent}3a`
+                                      }}
+                                    >
+                                      {activeSlide.badge}
+                                    </span>
+                                  </div>
+                                )}
+                                <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.1) }}>
+                                  {activeSlide.title}
+                                </h3>
+                              </div>
+
+                              <div className="overflow-hidden rounded-xl border shadow-lg" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                                <table className="w-full text-left border-collapse table-fixed">
+                                  <thead>
+                                    <tr style={{ borderBottom: `2px solid ${slideBorder}`, backgroundColor: `${slidePrimary}0d` }}>
+                                      <th className="px-3 py-2 w-1/4 text-[8px] uppercase tracking-wider font-mono opacity-70" style={{ color: slideText, fontSize: getFontSizeStyle(0.55) }}>Aspect</th>
+                                      <th className="px-3 py-2 w-3/8 font-bold" style={{ color: slidePrimary, fontSize: getFontSizeStyle(0.7) }}>Traditional Approach</th>
+                                      <th className="px-3 py-2 w-3/8 font-bold flex items-center gap-1" style={{ color: slideAccent, fontSize: getFontSizeStyle(0.7) }}>
+                                        Slidesss Systems
+                                        <span className="text-[6px] font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-400/20 px-1 py-0.2 rounded animate-pulse">Optimal</span>
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {(() => {
+                                      const rows: { aspect: string; left: string; right: string }[] = [];
+                                      const contentLen = activeSlide.content.length;
+                                      
+                                      let hasSeparator = false;
+                                      activeSlide.content.forEach(bullet => {
+                                        if (bullet.includes(" vs ") || bullet.includes(" | ") || bullet.includes(" - ")) {
+                                          hasSeparator = true;
+                                        }
+                                      });
+
+                                      if (hasSeparator) {
+                                        activeSlide.content.forEach((bullet, idx) => {
+                                          let aspect = `Dimension ${idx + 1}`;
+                                          let left = bullet;
+                                          let right = "";
+                                          const separators = [" vs ", " | ", " - "];
+                                          for (const sep of separators) {
+                                            if (bullet.includes(sep)) {
+                                              const parts = bullet.split(sep);
+                                              left = parts[0].trim();
+                                              right = parts.slice(1).join(sep).trim();
+                                              if (left.includes(": ")) {
+                                                const aspParts = left.split(": ");
+                                                aspect = aspParts[0].trim();
+                                                left = aspParts.slice(1).join(": ").trim();
+                                              }
+                                              break;
+                                            }
+                                          }
+                                          rows.push({ aspect, left, right });
+                                        });
+                                      } else {
+                                        const half = Math.ceil(contentLen / 2);
+                                        for (let i = 0; i < half; i++) {
+                                          const leftBullet = activeSlide.content[i] || "";
+                                          const rightBullet = activeSlide.content[i + half] || "";
+                                          let aspect = `Dimension ${i + 1}`;
+                                          let leftText = leftBullet;
+                                          let rightText = rightBullet;
+                                          if (leftBullet.includes(": ")) {
+                                            const parts = leftBullet.split(": ");
+                                            aspect = parts[0].trim();
+                                            leftText = parts.slice(1).join(": ").trim();
+                                          }
+                                          if (rightBullet.includes(": ")) {
+                                            const parts = rightBullet.split(": ");
+                                            rightText = parts.slice(1).join(": ").trim();
+                                          }
+                                          rows.push({ aspect, left: leftText, right: rightText });
+                                        }
+                                      }
+
+                                      return rows.map((row, rIdx) => (
+                                        <tr key={rIdx} className="hover:bg-neutral-900/10 transition-colors" style={{ borderBottom: rIdx < rows.length - 1 ? `1px solid ${slideBorder}` : 'none' }}>
+                                          <td className="px-3 py-2 font-mono opacity-80 break-words" style={{ color: slideText, fontSize: getFontSizeStyle(0.6) }}>{row.aspect}</td>
+                                          <td className="px-3 py-2 opacity-85 break-words" style={{ color: slideText, fontSize: getFontSizeStyle(0.7) }}>
+                                            <div className="flex items-start gap-1">
+                                              <span className="text-neutral-550 shrink-0 mt-0.5">✗</span>
+                                              <span>{row.left || "—"}</span>
+                                            </div>
+                                          </td>
+                                          <td className="px-3 py-2 font-medium break-words" style={{ color: slidePrimary, fontSize: getFontSizeStyle(0.7) }}>
+                                            <div className="flex items-start gap-1">
+                                              <span className="text-emerald-500 shrink-0 mt-0.5">✓</span>
+                                              <span>{row.right || "—"}</span>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ));
+                                    })()}
+                                  </tbody>
+                                </table>
                               </div>
                             </div>
 
@@ -1621,17 +1962,26 @@ export default function App() {
                                     </span>
                                   </div>
                                 )}
-                                <h3 className={`text-2xl font-bold ${activePresetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                                <h3 className={`font-bold ${activePresetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getFontSizeStyle(1.5) }}>
                                   {activeSlide.title}
                                 </h3>
                               </div>
                               <ul className="space-y-3.5">
-                                {activeSlide.content.map((bullet, idx) => (
-                                  <li key={idx} className={`flex items-start space-x-2.5 ${activePresetTheme.fontBody}`} style={{ color: slideText }}>
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: slideAccent }} />
-                                    <span>{bullet}</span>
-                                  </li>
-                                ))}
+                                {activeSlide.content.map((bullet, idx) => {
+                                  const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                  let displayText = bullet;
+                                  if (isListItem) {
+                                    displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                  }
+                                  return (
+                                    <li key={idx} className={`flex items-start ${isListItem ? "space-x-2.5" : ""} ${activePresetTheme.fontBody}`} style={{ color: slideText, fontSize: getFontSizeStyle(0.85) }}>
+                                      {isListItem && (
+                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: slideAccent }} />
+                                      )}
+                                      <span>{displayText}</span>
+                                    </li>
+                                  );
+                                })}
                               </ul>
                             </div>
                           )}
@@ -1730,7 +2080,8 @@ export default function App() {
                             { id: "quote-slide", label: "Keynote Quote" },
                             { id: "image-left", label: "Visual Left" },
                             { id: "image-right", label: "Visual Right" },
-                            { id: "stats-bento", label: "Stats Bento" }
+                            { id: "stats-bento", label: "Stats Bento" },
+                            { id: "comparison-table", label: "Comparison Table" }
                           ].map((gridLay) => (
                             <button
                               key={gridLay.id}
@@ -1746,6 +2097,117 @@ export default function App() {
                             </button>
                           ))}
                         </div>
+                      </div>
+
+                      {/* TYPOGRAPHY DYNAMIC SCALER SCREEN */}
+                      <div className="pt-4 border-t border-neutral-900 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-mono text-neutral-500 uppercase font-bold block">Typography Scale Tuning</label>
+                          <span className="text-[9px] font-mono font-bold uppercase text-indigo-400 bg-indigo-950/30 px-1.5 py-0.5 rounded border border-indigo-500/10">
+                            {activeSlide.fontSize || "medium"}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: "small", label: "Small", marker: "A", desc: "Compact spacing" },
+                            { id: "medium", label: "Medium", marker: "AA", desc: "Default density" },
+                            { id: "large", label: "Large", marker: "AAA", desc: "High visibility" }
+                          ].map((sz) => (
+                            <button
+                              key={sz.id}
+                              id={`btn-font-size-${sz.id}`}
+                              onClick={() => updateActiveSlide({ fontSize: sz.id as "small" | "medium" | "large" })}
+                              className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all ${
+                                (activeSlide.fontSize || "medium") === sz.id
+                                  ? "bg-indigo-950/40 text-indigo-400 border border-indigo-500/40 shadow-[0_0_12px_rgba(79,70,229,0.15)]"
+                                  : "bg-neutral-900 border border-neutral-850 text-neutral-400 hover:text-neutral-300 hover:border-neutral-700"
+                              }`}
+                              title={sz.desc}
+                            >
+                              <span className={`font-black tracking-tighter ${
+                                sz.id === "small" ? "text-xs" : sz.id === "medium" ? "text-sm" : "text-base"
+                              }`}>
+                                {sz.marker}
+                              </span>
+                              <span className="text-[9px] font-semibold tracking-wider uppercase mt-1 opacity-80">{sz.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* SLIDE CANVAS BACKGROUND COLOR & CONTRAST ACCESSIBILITY CHECKER */}
+                      <div className="pt-4 border-t border-neutral-900 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[10px] font-mono text-neutral-500 uppercase font-bold block">Slide Background Color</label>
+                          <span className="text-[9px] font-mono font-bold uppercase text-indigo-400 bg-indigo-950/30 px-1.5 py-0.5 rounded border border-indigo-500/10">
+                            {activeSlide.bgColor || presentation?.palette.background || "Default"}
+                          </span>
+                        </div>
+                        
+                        {/* Quick Presets */}
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {[
+                            { label: "Midnight Space", color: "#0B0F19" },
+                            { label: "Crisp Snow", color: "#FFFFFF" },
+                            { label: "Book Cream", color: "#FCF9F2" },
+                            { label: "Slate Grey", color: "#1E293B" },
+                            { label: "Matte Black", color: "#111827" },
+                            { label: "Silver Muted", color: "#F3F4F6" }
+                          ].map((preset) => (
+                            <button
+                              key={preset.color}
+                              type="button"
+                              onClick={() => handleSlideBgChange(preset.color)}
+                              className={`w-6 h-6 rounded-full border transition-all cursor-pointer relative flex items-center justify-center ${
+                                (activeSlide.bgColor || presentation?.palette.background) === preset.color
+                                  ? "ring-2 ring-indigo-500 scale-110 shadow-md"
+                                  : "border-neutral-850 hover:scale-105"
+                              }`}
+                              style={{ backgroundColor: preset.color }}
+                              title={`${preset.label} (${preset.color})`}
+                            >
+                              {(activeSlide.bgColor || presentation?.palette.background) === preset.color && (
+                                <Check className={`w-3.5 h-3.5 ${preset.color === "#FFFFFF" || preset.color === "#FCF9F2" || preset.color === "#F3F4F6" ? "text-slate-900" : "text-white"}`} />
+                              )}
+                            </button>
+                          ))}
+
+                          {/* Color Input container */}
+                          <div className="relative flex items-center gap-1 shrink-0 bg-neutral-900 border border-neutral-800 rounded-lg p-1">
+                            <input
+                              type="color"
+                              value={activeSlide.bgColor || presentation?.palette.background || "#0B0F19"}
+                              onChange={(e) => handleSlideBgChange(e.target.value)}
+                              className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent p-0"
+                            />
+                            <input
+                              type="text"
+                              maxLength={7}
+                              value={activeSlide.bgColor || presentation?.palette.background || "#0B0F19"}
+                              onChange={(e) => handleSlideBgChange(e.target.value)}
+                              className="w-16 bg-transparent text-[10px] font-mono font-bold text-neutral-300 focus:outline-none uppercase text-center"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Accessibility Audit Feedback Badge */}
+                        {(() => {
+                          const currentBg = activeSlide.bgColor || presentation?.palette.background || "#0B0F19";
+                          const contrastObj = getContrastColor(currentBg);
+                          const isAAA = contrastObj.contrastRatio >= 7.0;
+                          const isAA = contrastObj.contrastRatio >= 4.5;
+                          return (
+                            <div className="bg-neutral-900/45 border border-neutral-850 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-mono leading-tight">
+                              <span className="text-neutral-400">Text Contrast: <strong className="text-white font-mono">{contrastObj.contrastRatio.toFixed(1)}:1</strong></span>
+                              <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wide flex items-center gap-1 ${
+                                isAAA ? "bg-emerald-950/30 text-emerald-400 border border-emerald-500/20" : isAA ? "bg-indigo-950/30 text-indigo-400 border border-indigo-500/20" : "bg-amber-950/30 text-amber-400 border border-amber-500/20"
+                              }`}>
+                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${isAAA ? "bg-emerald-400" : isAA ? "bg-indigo-400" : "bg-amber-400 animate-pulse"}`} />
+                                {contrastObj.rating}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -2155,22 +2617,28 @@ export default function App() {
             const slideCardBg = s.cardBgColor || presentation.palette.cardBg;
             const slideBorder = s.borderColor || presentation.palette.border;
 
+            const printScale = s.fontSize === "small" ? 0.82 : s.fontSize === "large" ? 1.18 : 1.0;
+            const getPrintFontSizeStyle = (baseSizePx: number) => {
+              return `${Math.round(baseSizePx * printScale)}px`;
+            };
+
             return (
               <div
                 key={s.id}
-                className="print-page w-[297mm] h-[210mm] relative p-16 border-b border-neutral-100 flex flex-col justify-between overflow-hidden"
+                className="print-page relative overflow-hidden"
                 style={{
+                  width: "1920px",
+                  height: "1080px",
+                  minWidth: "1920px",
+                  minHeight: "1080px",
+                  maxWidth: "1920px",
+                  maxHeight: "1080px",
                   backgroundColor: slideBg,
                   color: slideText,
                   "--bg-color": slideBg,
                   "--text-color": slideText
                 } as React.CSSProperties}
               >
-                {/* ASYMMETRICAL DECORATIVE GRID LINES FOR BRUTALIST & SWISS DESIGN */}
-                {presentation.themeId === "brutalist-mono" && (
-                  <div className="absolute inset-0 pointer-events-none opacity-10 border-b border-r" style={{ borderColor: slideText, backgroundSize: "40px 40px", backgroundImage: "linear-gradient(to right, gray 1px, transparent 1px), linear-gradient(to bottom, gray 1px, transparent 1px)" }} />
-                )}
-
                 {/* DECORATIVE LIGHT SHAPES FOR AVANTGARDE */}
                 {presentation.themeId === "creative-avantgarde" && (
                   <div className="absolute -left-12 -top-12 w-48 h-48 bg-pink-300/10 rounded-full blur-2xl pointer-events-none" />
@@ -2181,23 +2649,24 @@ export default function App() {
                   <div className="absolute right-0 bottom-0 w-80 h-80 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
                 )}
 
-                <div className={`w-full h-full flex flex-col justify-between relative z-10 ${
-                  presentation.themeId === "brutalist-mono" ? "border-4 border-black p-8" : ""
+                <div className={`absolute inset-0 z-10 ${
+                  presentation.themeId === "brutalist-mono" ? "border-[24px] border-black" : ""
                 }`}>
-                  {/* Header */}
-                  <div className="flex justify-between items-center text-xs opacity-60 border-b border-neutral-700/10 pb-2">
-                    <span className="uppercase font-mono font-bold tracking-widest" style={{ color: slideAccent }}>{presentation.title}</span>
-                    <span className="font-mono">Slide {index + 1} of {presentation.slides.length}</span>
+                  {/* HEADER - FIXED POSITION */}
+                  <div className="absolute top-[80px] left-[80px] right-[80px] h-[50px] flex justify-between items-center text-lg opacity-80 border-b border-neutral-700/10 pb-3 z-20">
+                    <span className="uppercase font-mono font-bold tracking-widest text-[#4f46e5]" style={{ color: slideAccent }}>{presentation.title}</span>
+                    <span className="font-mono text-base">Slide {index + 1} of {presentation.slides.length}</span>
                   </div>
 
-                  {/* Body Content */}
-                  <div className="my-auto flex flex-col justify-center py-4">
+                  {/* BODY CONTENT AREA - FIXED POSITION WITH SCALED HIGH-FIDELITY TYPOGRAPHY & LAYOUTS */}
+                  <div className="absolute top-[170px] bottom-[170px] left-[80px] right-[80px] flex flex-col justify-center overflow-hidden z-20">
                     {isTitle ? (
-                      <div className="text-center space-y-6">
+                      /* LAYOUT 1: TITLE SLIDE (1920x1080) */
+                      <div className="text-center space-y-8 py-6">
                         {s.badge && (
-                          <div className="mb-1">
+                          <div className="mb-2">
                             <span
-                              className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                              className="text-sm font-mono font-bold uppercase tracking-widest px-4 py-2 rounded-full border shadow-md inline-block"
                               style={{
                                 backgroundColor: `${slideAccent}1d`,
                                 color: slideAccent,
@@ -2208,19 +2677,21 @@ export default function App() {
                             </span>
                           </div>
                         )}
-                        <h1 className={`text-4xl lg:text-5xl tracking-tight leading-tight ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>
+                        <h1 className={`tracking-tight leading-tight font-black ${presetTheme.fontHeading}`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(72) }}>
                           {presentation.title}
                         </h1>
-                        <h2 className="text-xl font-mono font-semibold opacity-90" style={{ color: slideText }}>
-                          {s.title}
-                        </h2>
+                        <div className="block mt-4">
+                          <h2 className="font-mono font-semibold opacity-90 text-center" style={{ color: slideText, fontSize: getPrintFontSizeStyle(30) }}>
+                            {s.title}
+                          </h2>
+                        </div>
                         {s.content.length > 0 && (
-                          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+                          <div className="flex flex-wrap items-center justify-center gap-4 pt-6">
                             {s.content.map((point, idx) => (
                               <span
                                 key={idx}
-                                className="text-xs px-3 py-1 bg-neutral-500/10 border border-neutral-700/30 rounded-full font-medium"
-                                style={{ color: slideAccent }}
+                                className="px-4 py-1.5 bg-neutral-500/10 border border-neutral-700/30 rounded-full font-medium"
+                                style={{ color: slideAccent, fontSize: getPrintFontSizeStyle(18) }}
                               >
                                 {point}
                               </span>
@@ -2229,12 +2700,13 @@ export default function App() {
                         )}
                       </div>
                     ) : s.layout === "two-column" ? (
-                      <div className="space-y-6">
+                      /* LAYOUT 2: TWO COLUMN (1920x1080) */
+                      <div className="space-y-6 h-full flex flex-col justify-center animate-fade-in">
                         <div>
                           {s.badge && (
                             <div className="mb-2">
                               <span
-                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                                 style={{
                                   backgroundColor: `${slideAccent}1d`,
                                   color: slideAccent,
@@ -2245,39 +2717,58 @@ export default function App() {
                               </span>
                             </div>
                           )}
-                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                          <h2 className={`font-black ${presetTheme.fontHeading} mb-2`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(48) }}>{s.title}</h2>
                         </div>
-                        <div className="grid grid-cols-2 gap-8 pt-2">
-                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
-                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slideAccent }} />
-                            <ul className="space-y-2.5">
-                              {s.content.slice(0, Math.ceil(s.content.length / 2)).map((bullet, idx) => (
-                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: slideText }}>
-                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
-                                  <span>{bullet}</span>
-                                </li>
-                              ))}
+                        <div className="grid grid-cols-2 gap-12 pt-4">
+                          <div className="p-8 rounded-2xl border-2 space-y-4 shadow-md min-h-[360px]" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                            <span className="h-2 w-8 rounded-full block" style={{ backgroundColor: slideAccent }} />
+                            <ul className="space-y-4">
+                              {s.content.slice(0, Math.ceil(s.content.length / 2)).map((bullet, idx) => {
+                                const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                let displayText = bullet;
+                                if (isListItem) {
+                                  displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                }
+                                return (
+                                  <li key={idx} className={`flex items-start ${isListItem ? "space-x-3" : ""} leading-relaxed ${presetTheme.fontBody}`} style={{ color: slideText, fontSize: getPrintFontSizeStyle(20) }}>
+                                    {isListItem && (
+                                      <span className="mt-2.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slidePrimary }} />
+                                    )}
+                                    <span>{displayText}</span>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
-                          <div className="p-5 rounded-xl border space-y-3" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
-                            <span className="h-1.5 w-6 rounded-full block" style={{ backgroundColor: slidePrimary }} />
-                            <ul className="space-y-2.5">
-                              {s.content.slice(Math.ceil(s.content.length / 2)).map((bullet, idx) => (
-                                <li key={idx} className={`flex items-start space-x-2 ${presetTheme.fontBody}`} style={{ color: slideText }}>
-                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                  <span>{bullet}</span>
-                                </li>
-                              ))}
+                          <div className="p-8 rounded-2xl border-2 space-y-4 shadow-md min-h-[360px]" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                            <span className="h-2 w-8 rounded-full block" style={{ backgroundColor: slideAccent }} />
+                            <ul className="space-y-4">
+                              {s.content.slice(Math.ceil(s.content.length / 2)).map((bullet, idx) => {
+                                const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                                let displayText = bullet;
+                                if (isListItem) {
+                                  displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                                }
+                                return (
+                                  <li key={idx} className={`flex items-start ${isListItem ? "space-x-3" : ""} leading-relaxed ${presetTheme.fontBody}`} style={{ color: slideText, fontSize: getPrintFontSizeStyle(20) }}>
+                                    {isListItem && (
+                                      <span className="mt-2.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                    )}
+                                    <span>{displayText}</span>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                         </div>
                       </div>
                     ) : s.layout === "quote-slide" ? (
-                      <div className="text-center max-w-2xl mx-auto space-y-4">
+                      /* LAYOUT 3: QUOTE SLIDE (1920x1080) */
+                      <div className="text-center max-w-5xl mx-auto space-y-8">
                         {s.badge && (
                           <div className="mb-2">
                             <span
-                              className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                              className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                               style={{
                                 backgroundColor: `${slideAccent}1d`,
                                 color: slideAccent,
@@ -2288,29 +2779,32 @@ export default function App() {
                             </span>
                           </div>
                         )}
-                        <span className="text-6xl leading-none font-black opacity-30 block" style={{ color: slideAccent }}>“</span>
-                        <h2 className="text-xl lg:text-2xl font-black italic tracking-wide" style={{ color: slideText }}>{s.title}</h2>
+                        <span className="text-9xl leading-none font-black opacity-30 block" style={{ color: slideAccent }}>“</span>
+                        <h2 className="font-black italic tracking-wide leading-relaxed text-center" style={{ color: slideText, fontSize: getPrintFontSizeStyle(40) }}>{s.title}</h2>
                         {s.content.length > 0 && (
-                          <p className="text-xs uppercase tracking-widest font-mono font-bold" style={{ color: slidePrimary }}>- {s.content.join(" & ")}</p>
+                          <div className="block pt-4">
+                            <p className="uppercase tracking-widest font-mono font-bold text-center opacity-85" style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(24) }}>- {s.content.join(" & ")}</p>
+                          </div>
                         )}
                       </div>
                     ) : s.layout === "image-left" && s.imageUrl ? (
-                      <div className="grid grid-cols-2 gap-8 items-center">
-                        <div className="relative h-64 rounded-xl overflow-hidden shadow">
-                          <img src={s.imageUrl} className="absolute inset-0 w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" onError={handleImageError} />
+                      /* LAYOUT 4: IMAGE LEFT (1920x1080) */
+                      <div className="grid grid-cols-2 gap-16 items-center">
+                        <div className="relative h-[480px] rounded-3xl overflow-hidden shadow-2xl border-2 border-neutral-700/10">
+                          <img src={s.imageUrl} className="absolute inset-0 w-full h-full object-cover rounded-3xl" referrerPolicy="no-referrer" onError={handleImageError} />
                           <div className="absolute inset-0 bg-neutral-950/20" />
                           {s.imageCaption && (
-                            <div className="absolute bottom-2 left-2 bg-neutral-950/80 text-[9px] px-2 py-0.5 rounded text-neutral-300">
+                            <div className="absolute bottom-4 left-4 bg-neutral-950/80 text-xs px-3 py-1.5 rounded-lg text-neutral-300">
                               {s.imageCaption}
                             </div>
                           )}
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                           <div>
                             {s.badge && (
                               <div className="mb-2">
                                 <span
-                                  className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                  className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                                   style={{
                                     backgroundColor: `${slideAccent}1d`,
                                     color: slideAccent,
@@ -2321,26 +2815,36 @@ export default function App() {
                                 </span>
                               </div>
                             )}
-                            <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                            <h2 className={`font-black leading-tight ${presetTheme.fontHeading} mb-4`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(48) }}>{s.title}</h2>
                           </div>
-                          <ul className="space-y-2.5">
-                            {s.content.map((bullet, idx) => (
-                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                <span>{bullet}</span>
-                              </li>
-                            ))}
+                          <ul className="space-y-5">
+                            {s.content.map((bullet, idx) => {
+                              const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                              let displayText = bullet;
+                              if (isListItem) {
+                                displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                              }
+                              return (
+                                <li key={idx} className={`flex items-start ${isListItem ? "space-x-3" : ""} leading-relaxed ${presetTheme.fontBody}`} style={{ color: slideText, fontSize: getPrintFontSizeStyle(20) }}>
+                                  {isListItem && (
+                                    <span className="mt-2.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                  )}
+                                  <span>{displayText}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>
                     ) : s.layout === "image-right" && s.imageUrl ? (
-                      <div className="grid grid-cols-2 gap-8 items-center">
-                        <div className="space-y-4">
+                      /* LAYOUT 5: IMAGE RIGHT (1920x1080) */
+                      <div className="grid grid-cols-2 gap-16 items-center">
+                        <div className="space-y-6">
                           <div>
                             {s.badge && (
                               <div className="mb-2">
                                 <span
-                                  className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                  className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                                   style={{
                                     backgroundColor: `${slideAccent}1d`,
                                     color: slideAccent,
@@ -2351,34 +2855,44 @@ export default function App() {
                                 </span>
                               </div>
                             )}
-                            <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                            <h2 className={`font-black leading-tight ${presetTheme.fontHeading} mb-4`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(48) }}>{s.title}</h2>
                           </div>
-                          <ul className="space-y-2.5">
-                            {s.content.map((bullet, idx) => (
-                              <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
-                                <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                                <span>{bullet}</span>
-                              </li>
-                            ))}
+                          <ul className="space-y-5">
+                            {s.content.map((bullet, idx) => {
+                              const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                              let displayText = bullet;
+                              if (isListItem) {
+                                displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                              }
+                              return (
+                                <li key={idx} className={`flex items-start ${isListItem ? "space-x-3" : ""} leading-relaxed ${presetTheme.fontBody}`} style={{ color: slideText, fontSize: getPrintFontSizeStyle(20) }}>
+                                  {isListItem && (
+                                    <span className="mt-2.5 w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
+                                  )}
+                                  <span>{displayText}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
-                        <div className="relative h-64 rounded-xl overflow-hidden shadow">
-                          <img src={s.imageUrl} className="absolute inset-0 w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" onError={handleImageError} />
+                        <div className="relative h-[480px] rounded-3xl overflow-hidden shadow-2xl border-2 border-neutral-700/10">
+                          <img src={s.imageUrl} className="absolute inset-0 w-full h-full object-cover rounded-3xl" referrerPolicy="no-referrer" onError={handleImageError} />
                           <div className="absolute inset-0 bg-neutral-950/20" />
                           {s.imageCaption && (
-                            <div className="absolute bottom-2 left-2 bg-neutral-950/80 text-[9px] px-2 py-0.5 rounded text-neutral-300">
+                            <div className="absolute bottom-4 left-4 bg-neutral-950/80 text-xs px-3 py-1.5 rounded-lg text-neutral-300">
                               {s.imageCaption}
                             </div>
                           )}
                         </div>
                       </div>
                     ) : s.layout === "stats-bento" ? (
-                      <div className="space-y-4">
+                      /* LAYOUT 6: STATS BENTO (1920x1080) */
+                      <div className="space-y-6 h-full flex flex-col justify-center">
                         <div>
                           {s.badge && (
                             <div className="mb-2">
                               <span
-                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                                 style={{
                                   backgroundColor: `${slideAccent}1d`,
                                   color: slideAccent,
@@ -2389,9 +2903,9 @@ export default function App() {
                               </span>
                             </div>
                           )}
-                          <h2 className={`text-xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                          <h2 className={`font-black leading-tight ${presetTheme.fontHeading} mb-4`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(48) }}>{s.title}</h2>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-8 pt-4">
                           {[0, 1, 2, 3].map((val) => {
                             const textVal = s.content[val] || "N/A metric value";
                             const spaceIdx = textVal.indexOf(" ");
@@ -2401,33 +2915,116 @@ export default function App() {
                               metricNum = textVal.substring(0, spaceIdx);
                               metricLabel = textVal.substring(spaceIdx + 1);
                             }
+
+                            const numericStr = metricNum.replace(/[^0-9.]/g, '');
+                            const numericVal = numericStr ? parseFloat(numericStr) : null;
+                            const isPercent = metricNum.includes("%");
+
                             return (
                               <div
                                 key={val}
-                                className="p-4 rounded-xl space-y-1"
+                                className="p-8 rounded-2xl border-2 shadow-md flex flex-col justify-between h-[210px] transition-all"
                                 style={{
                                   backgroundColor: slideCardBg,
-                                  border: `1px solid ${slideBorder}`
+                                  border: `2px solid ${slideBorder}`
                                 }}
                               >
-                                <span className="text-2xl font-heading font-black block" style={{ color: slideAccent }}>
-                                  {metricNum}
-                                </span>
-                                <span className="text-[10px] font-mono font-medium block leading-tight text-neutral-400 uppercase">
-                                  {metricLabel || "Strategic target metrics"}
-                                </span>
+                                <div className="space-y-1.5">
+                                  <span className="font-heading font-black block" style={{ color: slideAccent, fontSize: getPrintFontSizeStyle(42) }}>
+                                    {metricNum}
+                                  </span>
+                                  <span className="font-mono font-bold block leading-normal text-neutral-400 uppercase tracking-widest" style={{ fontSize: getPrintFontSizeStyle(13) }}>
+                                    {metricLabel || "Strategic target metrics"}
+                                  </span>
+                                </div>
+
+                                {/* PRINTABLE BAR CHART OR DIAGRAM WIDGET */}
+                                <div className="w-full pt-4 mt-auto">
+                                  {isPercent && numericVal !== null ? (
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center text-[10px] font-mono opacity-60">
+                                        <span>Progress Level</span>
+                                        <span>{Math.min(100, Math.round(numericVal))}%</span>
+                                      </div>
+                                      <div className="w-full h-3 bg-neutral-900/60 rounded-full overflow-hidden p-[2px] border border-neutral-850">
+                                        <div 
+                                          className="h-full rounded-full transition-all duration-1000"
+                                          style={{
+                                            width: `${Math.min(100, Math.max(8, numericVal))}%`,
+                                            background: `linear-gradient(to right, ${slidePrimary}, ${slideAccent})`,
+                                            boxShadow: `0 0 6px ${slideAccent}40`
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : numericVal !== null ? (
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center text-[10px] font-mono opacity-60">
+                                        <span>Relative Performance Graph</span>
+                                        <span>Scale {metricNum}</span>
+                                      </div>
+                                      <div className="h-10 flex items-end justify-between gap-[3px] w-full pt-1">
+                                        {[25, 40, 55, 30, 65, 80, 50, 70, 95, 100].map((hValue, barIdx) => {
+                                          const scaleFactor = Math.min(1.2, Math.max(0.3, numericVal / 100));
+                                          const calcHeight = Math.min(100, Math.max(15, hValue * scaleFactor));
+                                          return (
+                                            <div 
+                                              key={barIdx}
+                                              className="w-full rounded-t-sm transition-all"
+                                              style={{
+                                                height: `${calcHeight}%`,
+                                                backgroundColor: barIdx >= 8 ? slideAccent : `${slidePrimary}35`,
+                                              }}
+                                            />
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-1.5">
+                                      <div className="flex justify-between items-center text-[10px] font-mono opacity-60">
+                                        <span>Target Trajectory</span>
+                                        <span>Strategic Target</span>
+                                      </div>
+                                      <div className="h-8 w-full flex items-center justify-center">
+                                        <svg className="w-full h-full" viewBox="0 0 100 20" preserveAspectRatio="none">
+                                          <path 
+                                            d="M 0 15 Q 15 5, 30 14 T 60 4 T 90 12 L 100 8" 
+                                            fill="none" 
+                                            stroke={slideAccent} 
+                                            strokeWidth="3" 
+                                            strokeLinecap="round"
+                                            className="opacity-95"
+                                          />
+                                          <path 
+                                            d="M 0 15 Q 15 5, 30 14 T 60 4 T 90 12 L 100 8 L 100 20 L 0 20 Z" 
+                                            fill={`url(#ambient-grad-print-${val})`}
+                                            className="opacity-25"
+                                          />
+                                          <defs>
+                                            <linearGradient id={`ambient-grad-print-${val}`} x1="0" y1="0" x2="0" y2="1">
+                                              <stop offset="0%" stopColor={slideAccent} stopOpacity="0.4" />
+                                              <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                                            </linearGradient>
+                                          </defs>
+                                        </svg>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             );
                           })}
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
+                    ) : s.layout === "comparison-table" ? (
+                      /* LAYOUT 8: COMPARISON TABLE (1920x1080) */
+                      <div className="space-y-8 h-full flex flex-col justify-center">
                         <div>
                           {s.badge && (
                             <div className="mb-2">
                               <span
-                                className="text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border shadow-sm inline-block"
+                                className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
                                 style={{
                                   backgroundColor: `${slideAccent}1d`,
                                   color: slideAccent,
@@ -2438,24 +3035,142 @@ export default function App() {
                               </span>
                             </div>
                           )}
-                          <h2 className={`text-2xl font-bold ${presetTheme.fontHeading}`} style={{ color: slidePrimary }}>{s.title}</h2>
+                          <h2 className={`font-black leading-tight ${presetTheme.fontHeading} mb-4`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(44) }}>{s.title}</h2>
                         </div>
-                        <ul className="space-y-3.5">
-                          {s.content.map((bullet, idx) => (
-                            <li key={idx} className={`flex items-start space-x-2.5 ${presetTheme.fontBody}`} style={{ color: slideText }}>
-                              <span className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: slideAccent }} />
-                              <span>{bullet}</span>
-                            </li>
-                          ))}
+
+                        <div className="overflow-hidden rounded-3xl border-2 shadow-2xl" style={{ borderColor: slideBorder, backgroundColor: slideCardBg }}>
+                          <table className="w-full text-left border-collapse table-fixed">
+                            <thead>
+                              <tr style={{ borderBottom: `3px solid ${slideBorder}`, backgroundColor: `${slidePrimary}0d` }}>
+                                <th className="px-8 py-5 w-1/4 text-xs uppercase tracking-widest font-mono opacity-70" style={{ color: slideText, fontSize: getPrintFontSizeStyle(14) }}>Evaluation Dimension</th>
+                                <th className="px-8 py-5 w-3/8 font-bold" style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(22) }}>Standard Practices</th>
+                                <th className="px-8 py-5 w-3/8 font-bold flex items-center gap-3" style={{ color: slideAccent, fontSize: getPrintFontSizeStyle(22) }}>
+                                  Slidesss Advantage
+                                  <span className="text-xs font-mono uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-400/20 px-3 py-1 rounded">Optimized Solution</span>
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(() => {
+                                const rows: { aspect: string; left: string; right: string }[] = [];
+                                const contentLen = s.content.length;
+                                
+                                let hasSeparator = false;
+                                s.content.forEach(bullet => {
+                                  if (bullet.includes(" vs ") || bullet.includes(" | ") || bullet.includes(" - ")) {
+                                    hasSeparator = true;
+                                  }
+                                });
+
+                                if (hasSeparator) {
+                                  s.content.forEach((bullet, idx) => {
+                                    let aspect = `Dimension ${idx + 1}`;
+                                    let left = bullet;
+                                    let right = "";
+                                    const separators = [" vs ", " | ", " - "];
+                                    for (const sep of separators) {
+                                      if (bullet.includes(sep)) {
+                                        const parts = bullet.split(sep);
+                                        left = parts[0].trim();
+                                        right = parts.slice(1).join(sep).trim();
+                                        if (left.includes(": ")) {
+                                          const aspParts = left.split(": ");
+                                          aspect = aspParts[0].trim();
+                                          left = aspParts.slice(1).join(": ").trim();
+                                        }
+                                        break;
+                                      }
+                                    }
+                                    rows.push({ aspect, left, right });
+                                  });
+                                } else {
+                                  const half = Math.ceil(contentLen / 2);
+                                  for (let i = 0; i < half; i++) {
+                                    const leftBullet = s.content[i] || "";
+                                    const rightBullet = s.content[i + half] || "";
+                                    let aspect = `Dimension ${i + 1}`;
+                                    let leftText = leftBullet;
+                                    let rightText = rightBullet;
+                                    if (leftBullet.includes(": ")) {
+                                      const parts = leftBullet.split(": ");
+                                      aspect = parts[0].trim();
+                                      leftText = parts.slice(1).join(": ").trim();
+                                    }
+                                    if (rightBullet.includes(": ")) {
+                                      const parts = rightBullet.split(": ");
+                                      rightText = parts.slice(1).join(": ").trim();
+                                    }
+                                    rows.push({ aspect, left: leftText, right: rightText });
+                                  }
+                                }
+
+                                return rows.map((row, rIdx) => (
+                                  <tr key={rIdx} className="hover:bg-neutral-900/10 transition-colors" style={{ borderBottom: rIdx < rows.length - 1 ? `2px solid ${slideBorder}` : 'none' }}>
+                                    <td className="px-8 py-5 font-mono opacity-80 break-words" style={{ color: slideText, fontSize: getPrintFontSizeStyle(15) }}>{row.aspect}</td>
+                                    <td className="px-8 py-5 opacity-85 break-words" style={{ color: slideText, fontSize: getPrintFontSizeStyle(18) }}>
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-red-500 shrink-0 font-bold mt-1">✗</span>
+                                        <span>{row.left || "—"}</span>
+                                      </div>
+                                    </td>
+                                    <td className="px-8 py-5 font-semibold break-words" style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(18) }}>
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-emerald-500 shrink-0 font-bold mt-1">✓</span>
+                                        <span>{row.right || "—"}</span>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ) : (
+                      /* LAYOUT 7: DEFAULT / HEADLINE BULLET (1920x1080) */
+                      <div className="space-y-6">
+                        <div>
+                          {s.badge && (
+                            <div className="mb-2">
+                              <span
+                                className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border shadow-sm inline-block"
+                                style={{
+                                  backgroundColor: `${slideAccent}1d`,
+                                  color: slideAccent,
+                                  borderColor: `${slideAccent}3a`
+                                }}
+                              >
+                                  {s.badge}
+                              </span>
+                            </div>
+                          )}
+                          <h2 className={`font-black leading-tight ${presetTheme.fontHeading} mb-4`} style={{ color: slidePrimary, fontSize: getPrintFontSizeStyle(48) }}>{s.title}</h2>
+                        </div>
+                        <ul className="space-y-5 pt-4">
+                          {s.content.map((bullet, idx) => {
+                            const isListItem = bullet.trim().startsWith("•") || bullet.trim().startsWith("-") || bullet.trim().startsWith("*") || /^\d+\./.test(bullet.trim());
+                            let displayText = bullet;
+                            if (isListItem) {
+                              displayText = bullet.replace(/^[•\-\*\s]+/, '').replace(/^\d+\.\s*/, '');
+                            }
+                            return (
+                              <li key={idx} className={`flex items-start ${isListItem ? "space-x-3" : ""} leading-relaxed ${presetTheme.fontBody}`} style={{ color: slideText, fontSize: getPrintFontSizeStyle(24) }}>
+                                {isListItem && (
+                                  <span className="mt-3 w-3.5 h-3.5 rounded-full shrink-0 animate-pulse" style={{ backgroundColor: slideAccent }} />
+                                )}
+                                <span>{displayText}</span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
                     )}
                   </div>
 
-                  {/* Footer */}
-                  <div className="flex justify-between items-center text-[10px] opacity-50 border-t pt-4">
+                  {/* FOOTER - FIXED POSITION */}
+                  <div className="absolute bottom-[80px] left-[80px] right-[80px] h-[50px] flex justify-between items-center text-sm opacity-60 border-t border-neutral-700/15 pt-3 z-20">
                     <span style={{ color: slideText }}>Excelsior Systems © 2026</span>
-                    <span>PREPARATION LICENSE KEY: SINGLE-USER CONVERTER</span>
+                    <span className="font-mono uppercase tracking-widest text-xs">PREPARATION LICENSE KEY: SINGLE-USER CONVERTER</span>
                   </div>
                 </div>
               </div>
