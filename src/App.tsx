@@ -13,6 +13,7 @@ import {
 import { ThemeId, ColorPalette, SlideLayout, Slide, Presentation } from "./types";
 import { THEME_PRESETS, CURATED_UNSPLASH_IMAGES, getKeywordImage, normalizeHex, hexToRgbA } from "./lib/themePresets";
 import { exportToPPTX } from "./lib/pptxExport";
+import { testColorAccessibility, ensureAccessiblePalette, ensureAccessibleTextColor, getContrastRatio, getLuminance } from "./lib/accessibility";
 
 const SAMPLE_DOCX_TEXT = `# EXCELSIOR GLOBAL SYSTEMS Q3 MARKETING STRATEGY
 ## Brand Alignment & Expansion Outline
@@ -222,6 +223,11 @@ export default function App() {
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>("");
 
+  // Slide Deck Page Count Configuration Modal state (Let user specify slide count with skip option)
+  const [isDeckConfigOpen, setIsDeckConfigOpen] = useState<boolean>(false);
+  const [targetSlideCount, setTargetSlideCount] = useState<number>(7);
+  const [selectedSlideOption, setSelectedSlideOption] = useState<"auto" | 5 | 7 | 10 | 14 | "custom">("auto");
+
   // Presentation State
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
@@ -253,6 +259,7 @@ export default function App() {
   const loadingMessages = [
     "Analyzing document hierarchy...",
     "Extracting core statistics & metrics...",
+    "Testing color contrast for WCAG accessibility...",
     "Selecting semantic professional slide layouts...",
     "Aligning color spaces to your brand guidelines...",
     "Formulating concise high-impact summaries...",
@@ -260,14 +267,15 @@ export default function App() {
     "Constructing designer presentation system..."
   ];
 
-  // Auto-generate dynamic colors palette dynamically on brandColor change
+  // Auto-generate dynamic colors palette dynamically on brandColor change with accessibility checking
   useEffect(() => {
     if (presentation) {
-      const generatedPalette = THEME_PRESETS[presentation.themeId].defaultPalette(brandColor);
+      const rawPalette = THEME_PRESETS[presentation.themeId].defaultPalette(brandColor);
+      const { palette: accessiblePalette } = ensureAccessiblePalette(rawPalette);
       setPresentation(prev => prev ? {
         ...prev,
         brandColor,
-        palette: generatedPalette
+        palette: accessiblePalette
       } : null);
     }
   }, [brandColor]);
@@ -313,11 +321,12 @@ export default function App() {
     setDocName("Sample_Excelsior_Strategy_Report.docx");
     setRawText(SAMPLE_DOCX_TEXT);
     
-    // Construct premium presentation slides
+    // Construct premium presentation slides with accessibility validated and mandatory Thank You slide
     const sampleSlides: Slide[] = [
       {
         id: `slide-demo-1-${Date.now()}`,
         title: "EXCELSIOR GLOBAL SYSTEMS Q3 MARKETING STRATEGY",
+        badge: "EXECUTIVE BRIEF",
         content: [
           "Cohesive corporate brand strategy designed for active partners",
           "Presented by Excelsior Strategy Group",
@@ -329,6 +338,7 @@ export default function App() {
       {
         id: `slide-demo-2-${Date.now()}`,
         title: "RECENT PERFORMANCE STATS",
+        badge: "GROWTH METRICS",
         content: [
           "142% year-over-year compound expansion rate",
           "4.9 customer satisfaction score representing extreme fidelity",
@@ -341,6 +351,7 @@ export default function App() {
       {
         id: `slide-demo-3-${Date.now()}`,
         title: "CORE EXPANSION PILLARS",
+        badge: "STRATEGY PILLARS",
         content: [
           "DESIGN DEMOCRATIZATION: Providing simple, elegant web-based layout systems for business non-designers.",
           "BRAND ENGINE ALIGNMENT: One-click theme styles to maintain complete brand consistency.",
@@ -351,7 +362,20 @@ export default function App() {
       },
       {
         id: `slide-demo-4-${Date.now()}`,
+        title: "COMPETITIVE POSTURE SUMMARY",
+        badge: "MARKET ADVANTAGE",
+        content: [
+          "Visual Architecture: Expressive bento grids vs Static drab tables",
+          "Palette Calibration: Mathematical real-time contrast checking vs Inconsistent arbitrary colors",
+          "Turnaround Velocity: Instant 1920x1080 PPTX/PDF delivery vs Rigid expensive design loops"
+        ],
+        layout: "comparison-table",
+        notes: "Position Excelsior as the modern, high-velocity design intelligence platform."
+      },
+      {
+        id: `slide-demo-5-${Date.now()}`,
         title: "CORPORATE FOCUS DIRECTIVE",
+        badge: "CORE PRINCIPLE",
         content: [
           "\"Authentic visual intelligence is no longer a corporate luxury—it is the single highest leverage vector for corporate clarity and authority.\""
         ],
@@ -359,16 +383,29 @@ export default function App() {
         notes: "Read this quote with high conviction. Visual intelligence is our brand's authority signature."
       },
       {
-        id: `slide-demo-5-${Date.now()}`,
+        id: `slide-demo-6-${Date.now()}`,
         title: "EXECUTION TIMELINE",
+        badge: "MILESTONES",
         content: [
           "PHASE I (JUNE): Finalize full-stack Gemini JSON validation schemas with exponential backoff handlers.",
-          "PHASE II (JULY): Ship public pptxgenjs design pipeline & visual theme editors.",
+          "PHASE II (JULY): Ship public pptxgenjs design pipeline & 1920x1080 visual theme editors.",
           "PHASE III (AUGUST): Release premium curated visual searching tools.",
           "PHASE IV (SEPTEMBER): Announce general public market launch."
         ],
         layout: "headline-bullet",
         notes: "Walk the board through our rapid execution deliverables. All items are on track for Q3 delivery."
+      },
+      {
+        id: `slide-demo-7-${Date.now()}`,
+        title: "Thank you for listening",
+        badge: "THANK YOU & Q&A",
+        content: [
+          "We appreciate your time, partnership, and strategic focus.",
+          "Floor is now open for Q&A, executive discussion, and roadmap feedback.",
+          "Connect with our project leadership team: leadership@excelsiorsystems.io"
+        ],
+        layout: "headline-bullet",
+        notes: "Thank the audience warmly for their time and invite open questions and discussion."
       }
     ];
 
@@ -378,11 +415,14 @@ export default function App() {
       imageUrl: getKeywordImage(slide.title.toLowerCase() || "business strategy")
     }));
 
+    const rawPalette = THEME_PRESETS[selectedThemeId].defaultPalette(brandColor);
+    const { palette: accessiblePalette } = ensureAccessiblePalette(rawPalette);
+
     const demoPresentation: Presentation = {
       title: docName ? docName.replace(/\.[^/.]+$/, "").replace(/_/g, " ") : "Sample Excelsior Strategy Report",
       themeId: selectedThemeId,
       brandColor: brandColor,
-      palette: THEME_PRESETS[selectedThemeId].defaultPalette(brandColor),
+      palette: accessiblePalette,
       slides: slidesWithImages
     };
 
@@ -392,13 +432,23 @@ export default function App() {
     setActiveStep("editor");
   };
 
+  // Open the slide count configuration modal or trigger generation directly
+  const handleOpenDeckConfigOrGenerate = () => {
+    if (!rawText.trim()) {
+      setErrorMessage("Please select a Word document to upload or load our professional sample text outline.");
+      return;
+    }
+    setIsDeckConfigOpen(true);
+  };
+
   // Submit parsed text to backend to build full presentation slides using Gemini
-  const handleGeneratePresentation = async () => {
+  const handleGeneratePresentation = async (requestedCount?: number | null) => {
     if (!rawText.trim()) {
       setErrorMessage("Please select a Word document to upload or load our professional sample text outline.");
       return;
     }
 
+    setIsDeckConfigOpen(false);
     setIsGenerating(true);
     setErrorMessage(null);
     setGenerationProgress(10);
@@ -411,11 +461,11 @@ export default function App() {
         const jump = Math.floor(Math.random() * 10) + 5;
         const next = prev + jump;
         // Cycle status messages
-        const msgIndex = Math.floor(next / 15) % loadingMessages.length;
+        const msgIndex = Math.floor(next / 12) % loadingMessages.length;
         setStatusMessage(loadingMessages[msgIndex]);
         return next;
       });
-    }, 1200);
+    }, 1100);
 
     try {
       const res = await fetch("/api/gemini/generate-presentation", {
@@ -425,7 +475,8 @@ export default function App() {
           docText: rawText,
           brandColor: brandColor,
           themeId: selectedThemeId,
-          docName: docName
+          docName: docName,
+          targetSlideCount: requestedCount ?? (selectedSlideOption === "auto" ? undefined : targetSlideCount)
         })
       });
 
@@ -461,20 +512,61 @@ export default function App() {
         throw new Error(`Failed to parse presentation JSON response from server: ${responseText.slice(0, 150)}`);
       }
       
-      // Inject unique slide IDs and build standard initial presentation state
-      const initialSlides = deck.slides.map((slide: any, i: number) => ({
-        ...slide,
-        id: `slide-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
-        imageUrl: getKeywordImage(slide.imageSearchQuery || "business teamwork outline")
-      }));
-
       const activeThemeId = (deck.themeId as ThemeId) || selectedThemeId;
+      const rawPalette = THEME_PRESETS[activeThemeId].defaultPalette(brandColor);
+      
+      // Accessibility test before applying colors
+      const { palette: accessiblePalette } = ensureAccessiblePalette(rawPalette);
+
+      // Inject unique slide IDs and build standard initial presentation state with accessibility testing
+      const initialSlides = (deck.slides || []).map((slide: any, i: number) => {
+        // Test color contrast on slide level
+        const slideBg = slide.bgColor || accessiblePalette.background;
+        const slideText = ensureAccessibleTextColor(slideBg, slide.textColor || accessiblePalette.text);
+        const slidePrimary = ensureAccessibleTextColor(slideBg, slide.primaryColor || accessiblePalette.primary, 3.0);
+
+        return {
+          ...slide,
+          id: `slide-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
+          imageUrl: getKeywordImage(slide.imageSearchQuery || "business teamwork outline"),
+          bgColor: slideBg,
+          textColor: slideText,
+          primaryColor: slidePrimary
+        };
+      });
+
+      // Ensure mandatory closing slide exists
+      const lastSlide = initialSlides[initialSlides.length - 1];
+      const hasThankYou = lastSlide && (
+        lastSlide.title.toLowerCase().includes("thank you") ||
+        lastSlide.title.toLowerCase().includes("thanks") ||
+        (lastSlide.badge && lastSlide.badge.toLowerCase().includes("thank"))
+      );
+
+      if (!hasThankYou) {
+        initialSlides.push({
+          id: `slide-thank-you-${Date.now()}`,
+          title: "Thank you for listening",
+          badge: "THANK YOU & Q&A",
+          layout: "headline-bullet",
+          content: [
+            "Thank you for your time, focus, and participation.",
+            "We welcome any questions, discussion topics, or immediate feedback.",
+            "Connect with our project leadership team for execution next steps."
+          ],
+          notes: "Thank the audience for their time and open the floor for Q&A.",
+          imageUrl: getKeywordImage("celebration teamwork"),
+          bgColor: accessiblePalette.background,
+          textColor: accessiblePalette.text,
+          primaryColor: accessiblePalette.primary
+        });
+      }
 
       const loadedPresentation: Presentation = {
         title: deck.title || (docName ? docName.replace(/\.[^/.]+$/, "").replace(/_/g, " ") : "Untitled Presentation"),
         themeId: activeThemeId,
         brandColor: brandColor,
-        palette: THEME_PRESETS[activeThemeId].defaultPalette(brandColor),
+        palette: accessiblePalette,
         slides: initialSlides
       };
 
@@ -482,13 +574,13 @@ export default function App() {
       setSelectedThemeId(activeThemeId);
       setActiveSlideIndex(0);
       setGenerationProgress(100);
-      setStatusMessage("Pristine slide deck successfully crafted!");
+      setStatusMessage("Pristine 1920x1080 slide deck successfully crafted!");
 
       // Small pause for visual feedback
       setTimeout(() => {
         setActiveStep("editor");
         setIsGenerating(false);
-      }, 800);
+      }, 700);
 
     } catch (err: any) {
       console.error(err);
@@ -499,17 +591,41 @@ export default function App() {
     }
   };
 
-  // Apply another global layout theme
+  // Apply another global layout theme with accessibility enforcement
   const handleSwitchTheme = (themeId: ThemeId) => {
     if (presentation) {
-      const updatedPalette = THEME_PRESETS[themeId].defaultPalette(brandColor);
+      const rawPalette = THEME_PRESETS[themeId].defaultPalette(brandColor);
+      const { palette: accessiblePalette } = ensureAccessiblePalette(rawPalette);
       setPresentation({
         ...presentation,
         themeId,
-        palette: updatedPalette
+        palette: accessiblePalette
       });
     }
     setSelectedThemeId(themeId);
+  };
+
+  // Auto-Fix All Slides to meet WCAG AA contrast standard
+  const handleAutoFixAllSlidesContrast = () => {
+    if (!presentation) return;
+    const { palette: accessiblePalette } = ensureAccessiblePalette(presentation.palette);
+    const updatedSlides = presentation.slides.map(slide => {
+      const bg = slide.bgColor || accessiblePalette.background;
+      const text = ensureAccessibleTextColor(bg, slide.textColor || accessiblePalette.text);
+      const primary = ensureAccessibleTextColor(bg, slide.primaryColor || accessiblePalette.primary, 3.0);
+      return {
+        ...slide,
+        bgColor: bg,
+        textColor: text,
+        primaryColor: primary
+      };
+    });
+
+    setPresentation({
+      ...presentation,
+      palette: accessiblePalette,
+      slides: updatedSlides
+    });
   };
 
   // Slide navigation actions
@@ -1231,7 +1347,7 @@ export default function App() {
               <button
                 id="btn-generate-deck"
                 disabled={!rawText.trim() || isGenerating}
-                onClick={handleGeneratePresentation}
+                onClick={handleOpenDeckConfigOrGenerate}
                 className={`w-full py-4 px-6 rounded-2xl font-bold text-sm tracking-wide flex items-center justify-center space-x-2 shadow-lg transition-all ${
                   isGenerating || !rawText.trim()
                     ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
@@ -1246,7 +1362,7 @@ export default function App() {
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
-                    <span>Generate PDF/PPTX</span>
+                    <span>Generate PDF/PPTX (1920×1080)</span>
                   </>
                 )}
               </button>
@@ -2193,18 +2309,40 @@ export default function App() {
                         {/* Accessibility Audit Feedback Badge */}
                         {(() => {
                           const currentBg = activeSlide.bgColor || presentation?.palette.background || "#0B0F19";
-                          const contrastObj = getContrastColor(currentBg);
-                          const isAAA = contrastObj.contrastRatio >= 7.0;
-                          const isAA = contrastObj.contrastRatio >= 4.5;
+                          const currentText = activeSlide.textColor || presentation?.palette.text || "#FFFFFF";
+                          const contrastObj = testColorAccessibility(currentBg, currentText);
                           return (
-                            <div className="bg-neutral-900/45 border border-neutral-850 p-2.5 rounded-xl flex items-center justify-between text-[11px] font-mono leading-tight">
-                              <span className="text-neutral-400">Text Contrast: <strong className="text-white font-mono">{contrastObj.contrastRatio.toFixed(1)}:1</strong></span>
-                              <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wide flex items-center gap-1 ${
-                                isAAA ? "bg-emerald-950/30 text-emerald-400 border border-emerald-500/20" : isAA ? "bg-indigo-950/30 text-indigo-400 border border-indigo-500/20" : "bg-amber-950/30 text-amber-400 border border-amber-500/20"
-                              }`}>
-                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${isAAA ? "bg-emerald-400" : isAA ? "bg-indigo-400" : "bg-amber-400 animate-pulse"}`} />
-                                {contrastObj.rating}
-                              </span>
+                            <div className="bg-neutral-900/45 border border-neutral-850 p-2.5 rounded-xl space-y-2 text-[11px] font-mono leading-tight">
+                              <div className="flex items-center justify-between">
+                                <span className="text-neutral-400">Contrast: <strong className="text-white font-mono">{contrastObj.ratio.toFixed(1)}:1</strong></span>
+                                <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wide flex items-center gap-1 ${
+                                  contrastObj.level === "AAA"
+                                    ? "bg-emerald-950/30 text-emerald-400 border border-emerald-500/20"
+                                    : contrastObj.level === "AA"
+                                    ? "bg-indigo-950/30 text-indigo-400 border border-indigo-500/20"
+                                    : "bg-amber-950/30 text-amber-400 border border-amber-500/20"
+                                }`}>
+                                  <span className={`inline-block w-1.5 h-1.5 rounded-full ${
+                                    contrastObj.level === "AAA" ? "bg-emerald-400" : contrastObj.level === "AA" ? "bg-indigo-400" : "bg-amber-400 animate-pulse"
+                                  }`} />
+                                  {contrastObj.label}
+                                </span>
+                              </div>
+                              {!contrastObj.isAAPass && (
+                                <div className="pt-1 flex items-center justify-between border-t border-neutral-800/60">
+                                  <span className="text-[10px] text-amber-300">Below WCAG AA (4.5:1)</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const optimalText = ensureAccessibleTextColor(currentBg, currentText);
+                                      updateActiveSlide({ textColor: optimalText });
+                                    }}
+                                    className="px-2 py-0.5 text-[9px] font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-500/30 rounded transition cursor-pointer"
+                                  >
+                                    Auto-Fix Contrast
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           );
                         })()}
@@ -2510,7 +2648,7 @@ export default function App() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-indigo-400 font-heading">
                 <Palette className="w-5 h-5 text-amber-400 font-bold" />
-                <h3 className="font-heading font-extrabold text-lg text-white">Brand Color Layout Alignment</h3>
+                <h3 className="font-heading font-extrabold text-lg text-white">Export Deck Settings</h3>
               </div>
               <button
                 id="btn-close-export-settings"
@@ -2521,11 +2659,19 @@ export default function App() {
               </button>
             </div>
 
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              Verify your company's primary color guidelines below. The generated slide deck elements of <span className="text-white font-bold">{THEME_PRESETS[presentation.themeId].name}</span> theme will instantly skin to form uniform brand presentation consistency.
-            </p>
+            {/* RESOLUTION SPECIFICATION BADGE */}
+            <div className="p-3 bg-neutral-950 rounded-2xl border border-neutral-800 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">Output Resolution</span>
+                <span className="text-xs font-bold text-white font-mono">1920 × 1080 Full HD (16:9)</span>
+              </div>
+              <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg">
+                Fixed 1080p
+              </span>
+            </div>
 
-            <div className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl space-y-4">
+            {/* BRAND COLOR ALIGNMENT */}
+            <div className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl space-y-3">
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   <input
@@ -2533,47 +2679,72 @@ export default function App() {
                     type="color"
                     value={brandColor}
                     onChange={(e) => setBrandColor(e.target.value)}
-                    className="w-14 h-14 rounded-xl cursor-pointer border border-neutral-750 bg-transparent p-1"
+                    className="w-12 h-12 rounded-xl cursor-pointer border border-neutral-750 bg-transparent p-1"
                   />
                 </div>
                 <div className="flex-1 space-y-1">
-                  <label className="text-xs font-mono text-neutral-400 block uppercase">Brand HEX Color Code</label>
+                  <label className="text-[10px] font-mono text-neutral-400 block uppercase font-bold">Brand HEX Color</label>
                   <input
                     id="input-hex-text-modal"
                     type="text"
                     value={brandColor}
                     onChange={(e) => setBrandColor(normalizeHex(e.target.value, brandColor))}
                     placeholder="#4F46E5"
-                    className="bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-sm rounded-lg text-white font-mono w-full focus:outline-none focus:border-indigo-500"
+                    className="bg-neutral-900 border border-neutral-800 px-3 py-1.5 text-xs rounded-lg text-white font-mono w-full focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
 
               {/* REAL TIME PALETTE PROJECTION PREVIEW */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-mono font-bold text-neutral-400 block uppercase">Real-Time Palette Projection</span>
+              <div className="space-y-1 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-mono font-bold text-neutral-400 block uppercase">Real-Time Palette</span>
+                  {(() => {
+                    const testAudit = testColorAccessibility(presentation.palette.background, presentation.palette.text);
+                    return (
+                      <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                        testAudit.isAAPass ? "text-emerald-400 bg-emerald-950/30" : "text-amber-400 bg-amber-950/30"
+                      }`}>
+                        WCAG {testAudit.level} ({testAudit.ratio}:1)
+                      </span>
+                    );
+                  })()}
+                </div>
                 <div className="grid grid-cols-5 gap-1.5 p-1 bg-neutral-950 rounded-xl border border-neutral-850">
-                  <div className="text-center p-1.5 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.primary }}>
+                  <div className="text-center p-1 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.primary }}>
                     <span className="text-[8px] font-mono font-bold px-1" style={{ color: presentation.palette.text }}>Brand</span>
                   </div>
-                  <div className="text-center p-1.5 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.secondary }}>
+                  <div className="text-center p-1 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.secondary }}>
                     <span className="text-[8px] font-mono font-bold px-1" style={{ color: presentation.palette.background }}>Sec</span>
                   </div>
-                  <div className="text-center p-1.5 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.accent }}>
+                  <div className="text-center p-1 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.accent }}>
                     <span className="text-[8px] font-mono font-bold px-1" style={{ color: presentation.palette.text }}>Acc</span>
                   </div>
-                  <div className="text-center p-1.5 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.cardBg }}>
+                  <div className="text-center p-1 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.cardBg }}>
                     <span className="text-[8px] font-mono font-bold px-1" style={{ color: presentation.palette.text }}>Card</span>
                   </div>
-                  <div className="text-center p-1.5 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.background }}>
+                  <div className="text-center p-1 rounded-lg border border-neutral-900" style={{ backgroundColor: presentation.palette.background }}>
                     <span className="text-[8px] font-mono font-bold px-1" style={{ color: presentation.palette.text }}>Canvas</span>
                   </div>
                 </div>
               </div>
+
+              {/* WCAG Auto Fix Action Button */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="button"
+                  id="btn-fix-all-contrast"
+                  onClick={handleAutoFixAllSlidesContrast}
+                  className="text-[10px] font-mono font-bold text-indigo-400 hover:text-indigo-300 flex items-center space-x-1"
+                >
+                  <Check className="w-3 h-3" />
+                  <span>Enforce WCAG AA on All Slides</span>
+                </button>
+              </div>
             </div>
 
             {/* ACTION TRIGGERS IN FOOTER */}
-            <div className="flex items-center justify-end space-x-3 pt-3 border-t border-neutral-800/60">
+            <div className="flex items-center justify-end space-x-3 pt-2 border-t border-neutral-800/60">
               <button
                 id="btn-cancel-export-modal"
                 onClick={() => setIsExportSettingsOpen(false)}
@@ -2595,10 +2766,135 @@ export default function App() {
               >
                 {pendingExportType === "pdf" ? <Printer className="w-4 h-4" /> : <Download className="w-4 h-4" />}
                 <span>
-                  Confirm & Export {pendingExportType === "pdf" ? "PDF" : "PPTX"}
+                  Confirm & Export {pendingExportType === "pdf" ? "PDF (1080p)" : "PPTX (1080p)"}
                 </span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: SLIDE DECK PAGE COUNT & STRUCTURE CONFIGURATION (PROMPTS BEFORE GENERATING SLIDES) */}
+      {isDeckConfigOpen && (
+        <div id="modal-deck-config" className="no-print fixed inset-0 z-50 bg-neutral-950/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-6 shadow-2xl animate-in zoom-in-95 duration-200 text-left">
+            
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-4">
+              <div className="flex items-center space-x-2.5 text-indigo-400">
+                <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+                  <Sliders className="w-5 h-5 text-indigo-400" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-extrabold text-base sm:text-lg text-white">Slide Deck Structure</h3>
+                  <p className="text-[11px] text-neutral-400">How many pages would you like to generate?</p>
+                </div>
+              </div>
+              <button
+                id="btn-close-deck-config"
+                onClick={() => setIsDeckConfigOpen(false)}
+                className="text-neutral-500 hover:text-white p-1 rounded-lg transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* PRESET CHIPS */}
+            <div className="space-y-2.5">
+              <label className="text-[10px] font-mono text-neutral-400 uppercase font-bold block">Page Count Presets</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { count: 5, label: "5 Slides", desc: "Brief Briefing" },
+                  { count: 7, label: "7 Slides", desc: "Pitch (Recommended)" },
+                  { count: 10, label: "10 Slides", desc: "Comprehensive" },
+                  { count: 14, label: "14 Slides", desc: "Deep Dive" }
+                ].map(item => (
+                  <button
+                    key={item.count}
+                    id={`btn-preset-count-${item.count}`}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSlideOption(item.count as 5 | 7 | 10 | 14);
+                      setTargetSlideCount(item.count);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      selectedSlideOption === item.count
+                        ? "bg-indigo-950/40 border-indigo-500 text-white shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500/50"
+                        : "bg-neutral-950/50 border-neutral-800 text-neutral-300 hover:border-neutral-700"
+                    }`}
+                  >
+                    <span className="font-bold text-xs block">{item.label}</span>
+                    <span className="text-[10px] text-neutral-400 block mt-0.5 leading-tight">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* CUSTOM NUMBER INPUT & SLIDER */}
+            <div className="bg-neutral-950 border border-neutral-800/80 p-4 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-neutral-300">Custom Slide Target</span>
+                <div className="flex items-center space-x-2">
+                  <input
+                    id="input-target-slide-count"
+                    type="number"
+                    min={3}
+                    max={30}
+                    value={targetSlideCount}
+                    onChange={(e) => {
+                      const val = Math.max(3, Math.min(30, parseInt(e.target.value) || 7));
+                      setTargetSlideCount(val);
+                      setSelectedSlideOption("custom");
+                    }}
+                    className="w-14 bg-neutral-900 border border-neutral-750 text-white font-mono font-bold text-center text-xs py-1 rounded-lg focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-xs text-neutral-400 font-mono">pages</span>
+                </div>
+              </div>
+
+              <input
+                id="range-target-slide-count"
+                type="range"
+                min={3}
+                max={25}
+                value={targetSlideCount}
+                onChange={(e) => {
+                  setTargetSlideCount(parseInt(e.target.value));
+                  setSelectedSlideOption("custom");
+                }}
+                className="w-full h-1.5 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+
+            {/* QUALITY ASSURANCE NOTICE */}
+            <div className="bg-indigo-950/20 border border-indigo-500/20 p-3 rounded-2xl flex items-start space-x-2.5">
+              <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+              <div className="text-[11px] text-indigo-200/90 leading-relaxed">
+                Output fixed at <strong>1920 × 1080</strong> Full HD with <strong>WCAG 2.1 contrast verification</strong> and a closing <strong>"Thank you for listening"</strong> slide.
+              </div>
+            </div>
+
+            {/* MODAL ACTION BUTTONS */}
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-2.5 pt-2 border-t border-neutral-800/80">
+              <button
+                id="btn-skip-slide-count"
+                type="button"
+                onClick={() => handleGeneratePresentation(null)}
+                className="w-full sm:w-auto px-4 py-2.5 border border-neutral-800 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold rounded-xl transition cursor-pointer"
+              >
+                Skip (Auto-Detect Slide Count)
+              </button>
+
+              <button
+                id="btn-confirm-generate-deck"
+                type="button"
+                onClick={() => handleGeneratePresentation(targetSlideCount)}
+                className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-pink-600 hover:opacity-95 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-500/20 flex items-center justify-center space-x-1.5 transition cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+                <span>Generate {targetSlideCount} Slides</span>
+              </button>
+            </div>
+
           </div>
         </div>
       )}

@@ -78,11 +78,15 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
       });
     }
 
-    const { docText, brandColor, themeId, docName } = req.body;
+    const { docText, brandColor, themeId, docName, targetSlideCount } = req.body;
 
     if (!docText || docText.trim().length === 0) {
       return res.status(400).json({ error: "Document text content is empty or invalid." });
     }
+
+    const slideCountInstruction = targetSlideCount && typeof targetSlideCount === "number" && targetSlideCount > 0
+      ? `TARGET SLIDE COUNT: The user explicitly requested EXACTLY ${targetSlideCount} slides (including the title slide and the concluding 'Thank you for listening' slide). You MUST structure the deck so that the output contains exactly ${targetSlideCount} slides.`
+      : `ORGANIC SLIDE COUNT: The user selected auto-detection. Determine the total slide count organically from the content depth without any arbitrary maximum ceiling.`;
 
     const prompt = `
       You are a world-class Elite Creative Director and Senior Presentation Art Director.
@@ -97,11 +101,18 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
 
       DESIGN & PLOT ARCHITECTURE SYSTEM:
       1. PRESENTATION LENGTH:
-         Adapt the length dynamically to give a thorough, comprehensive overview.
-         - DO NOT limit or truncate how many pages/slides are generated. The total page count must be determined organically solely by the content in the uploaded document. If there is a lot of content, feel free to generate 15, 20, or even more slides to fully cover all details without any arbitrary limit or ceiling.
+         ${slideCountInstruction}
          - Maximize outline coverage while keeping each individual slide layout uncluttered.
 
-      2. THEME-CONSTRUCTED SLIDE-SPECIFIC COSMETIC VARIATION:
+      2. MANDATORY FINAL SLIDE - "THANK YOU FOR LISTENING":
+         The absolute last slide in every presentation deck MUST be a dedicated, elegant closing slide.
+         - Title: "Thank you for listening" (or "Thank You")
+         - Badge: "THANK YOU" or "Q&A & CLOSING"
+         - Layout: "quote-slide", "headline-bullet", or "minimal-split"
+         - Content: 2-3 concluding bullet points or notes (e.g. Q&A invitation, follow-up contact info, key takeaways, feedback channels).
+         - Visual Style: Use a high-contrast visual break color block or celebration accent.
+
+      3. THEME-CONSTRUCTED SLIDE-SPECIFIC COSMETIC VARIATION:
          To make the deck look bespoke, you must define slide-level color configurations and content badges.
          Introduce 'visual breaks' by occasionally inverting or emphasizing slides!
          
@@ -132,22 +143,22 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
            * Visual Break slides:
              Delightful pastel peach or rich mauve backdrops! E.g.: bgColor: "#FEF3C7", textColor: "#451A03", primaryColor: "#92400E", accentColor: "#3B82F6", cardBgColor: "#FFFBEB", borderColor: "#FDE68A"
 
-      3. BESPOKE METADATA BADGES:
+      4. BESPOKE METADATA BADGES:
          Every slide must receive a custom "badge" representing its visual purpose or strategic emphasis.
          - Do not repeat the same badge across more than 2 slides.
-         - Examples of badges: "EXECUTIVE SUMMARY", "MARKET CONFORMANCE", "OPPORTUNITY", "KEY METRIC", "THE PROBLEM", "PROPOSED SOLUTION", "FINANCIAL DEVIATION", "NEXT STEPS", "CUSTOMER VOICE", "MILESTONES".
+         - Examples of badges: "EXECUTIVE SUMMARY", "MARKET CONFORMANCE", "OPPORTUNITY", "KEY METRIC", "THE PROBLEM", "PROPOSED SOLUTION", "FINANCIAL DEVIATION", "NEXT STEPS", "CUSTOMER VOICE", "MILESTONES", "THANK YOU".
 
-      4. CHOOSE EXPRESSIVE LAYOUTS:
+      5. CHOOSE EXPRESSIVE LAYOUTS:
          Tailor layouts specifically to fit the underlying slide copy:
          - "title-slide": Dedicated introduction.
          - "two-column": Ideal for side-by-side structures or dual-category bullets.
-        - "comparison-table": CRITICAL layout choice for differences, versus comparisons (e.g. Legacy vs Slidesss), opposing viewpoints, pros/cons, or alternative features. Always select "comparison-table" when the content lists features, before vs after, or pros vs cons.
+         - "comparison-table": CRITICAL layout choice for differences, versus comparisons (e.g. Legacy vs Slidesss), opposing viewpoints, pros/cons, or alternative features. Always select "comparison-table" when the content lists features, before vs after, or pros vs cons.
          - "headline-bullet": Elegant large subtitle statement with pristine items.
          - "quote-slide": Perfect for a strong single takeaway quotation or bold highlighted realization.
          - "image-left" / "image-right": Bold asymmetrical splits highlighting Unsplash visuals.
          - "stats-bento": 4 metric boxes. Perfect ONLY if the bullets express clean growth percentages, finances, or dynamic numbers (the bullets should contain actual numbers!).
 
-      5. RESPECT TEXT FORMAT OF SOURCE DOCUMENT (CRITICAL):
+      6. RESPECT TEXT FORMAT OF SOURCE DOCUMENT (CRITICAL):
          - Do NOT reduce text into list items or bullet points unless it is explicitly indicated as a bullet point, numbered list, or dash item in the source document.
          - If the source document contains a paragraph, explanation, or standard prose, keep it exactly as a regular paragraph/sentence block of text.
          - Only prepend items in your 'content' array with a bullet symbol style (like '• ', '- ' or numbered indicators) if they were bulleted or numbered list items in the uploaded document.
@@ -249,6 +260,42 @@ app.post("/api/gemini/generate-presentation", async (req, res) => {
     }
 
     const payload = JSON.parse(textResult.trim());
+
+    // Ensure slides array exists
+    if (!Array.isArray(payload.slides)) {
+      payload.slides = [];
+    }
+
+    // MANDATORY CLOSING SLIDE CHECK: Ensure the last slide is "Thank you for listening"
+    const lastSlide = payload.slides[payload.slides.length - 1];
+    const hasThankYou = lastSlide && (
+      lastSlide.title.toLowerCase().includes("thank you") ||
+      lastSlide.title.toLowerCase().includes("thanks") ||
+      (lastSlide.badge && lastSlide.badge.toLowerCase().includes("thank"))
+    );
+
+    if (!hasThankYou) {
+      const firstSlide = payload.slides[0] || {};
+      payload.slides.push({
+        title: "Thank you for listening",
+        badge: "THANK YOU",
+        layout: "headline-bullet",
+        content: [
+          "Thank you for your time, focus, and participation.",
+          "We welcome any questions, discussion topics, or immediate feedback.",
+          "Connect with our project leadership team for execution next steps."
+        ],
+        notes: "Thank the audience for their time and open the floor for Q&A.",
+        imageSearchQuery: "team celebration thank you",
+        bgColor: firstSlide.bgColor || "#0B0F19",
+        textColor: firstSlide.textColor || "#FFFFFF",
+        primaryColor: firstSlide.primaryColor || brandColor || "#4F46E5",
+        accentColor: firstSlide.accentColor || "#10B981",
+        cardBgColor: firstSlide.cardBgColor || "#161E2E",
+        borderColor: firstSlide.borderColor || "#1F2937"
+      });
+    }
+
     return res.json(payload);
   } catch (error: any) {
     console.error("Presentation Generation Error:", error);
